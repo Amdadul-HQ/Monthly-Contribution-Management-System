@@ -1,9 +1,7 @@
-import React from 'react'
+import LadingPage from "@/components/module/LadingPage"
 
 const page = () => {
-  return (
-    <div>page</div>
-  )
+  return <LadingPage/>
 }
 
 export default page
