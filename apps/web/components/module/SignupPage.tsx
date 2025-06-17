@@ -407,12 +407,12 @@ export default function SignupPage() {
           `}
         >
           {/* Phone frame */}
-          <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-6 relative overflow-hidden min-h-[700px]">
+          <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-6 relative overflow-hidden min-h-[calc(100vh-100px)]">
             {/* Notch */}
             {/* <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-20 h-6 bg-black rounded-full"></div> */}
 
             {/* Content */}
-            <div className="pt-12 pb-8 h-full flex flex-col">
+            <div className="h-full flex flex-col">
               {/* Header */}
               <div
                 className={`
@@ -507,7 +507,7 @@ export default function SignupPage() {
         {/* Floating elements around the phone */}
         <div
           className={`
-            absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-400 
+            absolute top-3 right-4 w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-400 
             rounded-full flex items-center justify-center shadow-lg transition-all duration-1000 delay-1000
             ${isVisible ? "opacity-100 translate-y-0 rotate-0" : "opacity-0 translate-y-4 rotate-45"}
           `}
@@ -515,7 +515,7 @@ export default function SignupPage() {
           <User className="w-6 h-6 text-white" />
         </div>
 
-        <div
+        {/* <div
           className={`
             absolute -bottom-8 -right-8 w-12 h-12 bg-gradient-to-r from-blue-400 to-cyan-400 
             rounded-full flex items-center justify-center shadow-lg transition-all duration-1000 delay-1200
@@ -523,7 +523,7 @@ export default function SignupPage() {
           `}
         >
           <DollarSign className="w-5 h-5 text-white" />
-        </div>
+        </div> */}
       </div>
 
       {/* Bottom gradient overlay */}
