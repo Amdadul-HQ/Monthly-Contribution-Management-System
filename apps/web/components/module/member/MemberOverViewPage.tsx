@@ -114,11 +114,11 @@ export function MemberOverViewPage() {
             </Card>
 
              {/* Summary Stats */}
-        <div className="gap-3 col-span-2 flex grid-cols-2">
+        <div className="gap-3 lg:col-span-2 flex-col flex lg:grid-cols-2 grid-cols-1">
           <div className="flex gap-3">
-            <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg">
+            <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full">
                 <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-cyan-600">
+                <div className="lg:text-2xl font-bold text-cyan-600">
                     {formatCurrency(recentDeposits.reduce((sum, deposit) => sum + deposit.amount, 0))}
                 </div>
                 <p className="text-sm text-gray-700">Last 5 Months</p>
@@ -126,9 +126,9 @@ export function MemberOverViewPage() {
             </Card>
 
 
-            <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg">
+            <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full">
                 <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-cyan-700">
+                <div className="lg:text-2xl font-bold text-cyan-700">
                     {formatCurrency(monthlyPayments.reduce((sum, month) => sum + month.amount, 0) / 12)}
                 </div>
                 <p className="text-sm text-gray-700">Avg Monthly</p>
