@@ -470,7 +470,7 @@ export default function SignupPage() {
 
               {/* Action buttons */}
               {!isSuccess && (
-                <div className="mt-6 space-y-3">
+                <div className="mt-6 space-y-1">
                   {currentStep < 3 ? (
                     <Button
                       onClick={handleNext}
@@ -515,15 +515,6 @@ export default function SignupPage() {
           <User className="w-6 h-6 text-white" />
         </div>
 
-        {/* <div
-          className={`
-            absolute -bottom-8 -right-8 w-12 h-12 bg-gradient-to-r from-blue-400 to-cyan-400 
-            rounded-full flex items-center justify-center shadow-lg transition-all duration-1000 delay-1200
-            ${isVisible ? "opacity-100 translate-y-0 rotate-0" : "opacity-0 translate-y-4 -rotate-45"}
-          `}
-        >
-          <DollarSign className="w-5 h-5 text-white" />
-        </div> */}
       </div>
 
       {/* Bottom gradient overlay */}
