@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,useSidebar } from "@workspace/ui/components/sidebar"
-import { BarChart3, History, Plus, Settings, Users, Wallet } from "lucide-react"
+import { BarChart3, History, Plus, Settings, User, Users, Wallet } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -14,13 +14,19 @@ interface DashboardSidebarProps {
 
 const memberNavItems = [
   {
+    title: "Profile",
+    url: "/dashboard/member/profile",
+    icon: User,
+  },
+  ,
+  {
     title: "Overview",
     url: "/dashboard/member",
     icon: BarChart3,
   },
   {
     title: "Deposit History",
-    url: "/dashboard/deposit-history",
+    url: "/dashboard/member/deposit-history",
     icon: History,
   },
 ]
@@ -71,7 +77,7 @@ export function DashboardSidebar({ userType }: DashboardSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {navItems.map((item:any) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>
@@ -93,7 +99,7 @@ export function DashboardSidebar({ userType }: DashboardSidebarProps) {
               <SidebarGroupContent>
                 <div className="px-2">
                   <Button asChild className="w-full justify-start gap-2" size="sm">
-                    <Link href="/dashboard/deposit">
+                    <Link href="/dashboard/member/deposit">
                       <Plus className="size-4" />
                       Deposit Now
                     </Link>

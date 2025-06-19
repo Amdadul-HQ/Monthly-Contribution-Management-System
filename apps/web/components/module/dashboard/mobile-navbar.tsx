@@ -11,25 +11,25 @@ interface MobileBottomNavProps {
 
 const memberNavItems = [
   {
-    title: "Home",
-    url: "/dashboard",
-    icon: Home,
+    title: "Profile",
+    url: "/dashboard/member/profile",
+    icon: User,
+  },
+  ,
+  {
+    title: "Overview",
+    url: "/dashboard/member",
+    icon: BarChart3,
   },
   {
-    title: "History",
-    url: "/dashboard/deposit-history",
+    title: "Deposit History",
+    url: "/dashboard/member/deposit-history",
     icon: History,
   },
   {
     title: "Deposit",
-    url: "/dashboard/deposit",
+    url: "/dashboard/member/deposit",
     icon: Plus,
-    isAction: true,
-  },
-  {
-    title: "Profile",
-    url: "/dashboard/profile",
-    icon: User,
   },
 ]
 
@@ -65,7 +65,7 @@ export function MobileBottomNav({ userType }: MobileBottomNavProps) {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border">
         <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
-          {navItems.map((item) => {
+          {navItems.map((item:any) => {
             const isActive = pathname === item.url
 
             return (
