@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,useSidebar } from "@workspace/ui/components/sidebar"
-import { BarChart3, History, Plus, Settings, User, Users, Wallet } from "lucide-react"
+import { BarChart3, History, Plus, Settings, User, UserCog, UserPlus, Users, Wallet } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -39,8 +39,13 @@ const adminNavItems = [
   },
   {
     title: "Users",
-    url: "/admin/users",
-    icon: Users,
+    url: "/dashboard/admin/users",
+    icon: UserCog,
+  },
+  {
+    title: "User Request's",
+    url: "/dashboard/admin/user-request",
+    icon: UserPlus,
   },
   {
     title: "Deposits",
