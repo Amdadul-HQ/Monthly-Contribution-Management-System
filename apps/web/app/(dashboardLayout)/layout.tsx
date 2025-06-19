@@ -10,7 +10,7 @@ interface DashboardLayoutProps {
   userType?: "member" | "admin"
 }
 
-const DashboardLayout = ({ children, userType = "member" }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, userType = "admin" }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <DashboardSidebar userType={userType} />

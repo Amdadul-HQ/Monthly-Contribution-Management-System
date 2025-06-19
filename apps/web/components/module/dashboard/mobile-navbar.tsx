@@ -36,7 +36,7 @@ const memberNavItems = [
 const adminNavItems = [
   {
     title: "Home",
-    url: "/admin/dashboard",
+    url: "/dashboard/admin",
     icon: Home,
   },
   {

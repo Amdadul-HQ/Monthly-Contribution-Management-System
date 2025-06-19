@@ -34,7 +34,7 @@ const memberNavItems = [
 const adminNavItems = [
   {
     title: "Overview",
-    url: "/admin/dashboard",
+    url: "/dashboard/admin",
     icon: BarChart3,
   },
   {
