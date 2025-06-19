@@ -49,8 +49,13 @@ const adminNavItems = [
   },
   {
     title: "Deposits",
-    url: "/admin/deposits",
+    url: "/dashboard/admin/deposit",
     icon: Wallet,
+  },
+  {
+    title:"Deposits Request's",
+    url:"/dashboard/admin/deposit-request",
+    icon:Wallet
   },
   {
     title: "Settings",
