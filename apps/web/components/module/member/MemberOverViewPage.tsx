@@ -166,7 +166,7 @@ export function MemberOverViewPage() {
         </div>
 
         {/* Current Month Status & Recent Deposits */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Current Month Status */}
           <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg">
             <CardHeader>
