@@ -4,6 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { useEffect, useState } from "react"
 import Lottie from "lottie-react";
 import logo from '../../public/lottie/animation.json'
+import Link from "next/link";
 
 export default function LadingPage() {
   const [isVisible, setIsVisible] = useState(false)
@@ -67,24 +68,27 @@ export default function LadingPage() {
               {/* Buttons */}
               <div
                 className={`
-                  space-y-4 transition-all duration-1000 delay-700 ease-out lg:w-2xl w-[300px] mx-auto
+                  space-y-4 flex flex-col transition-all duration-1000 delay-700 ease-out lg:w-2xl w-[300px] mx-auto
                   ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
                 `}
               >
                 {/* Login button */}
-                <Button
-                  className="
-                    w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 
-                    hover:from-blue-700 hover:to-cyan-600 text-white font-medium 
-                    rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
-                    transform hover:scale-105 active:scale-95
-                  "
-                >
-                  Login
-                </Button>
+                <Link href='/login'>
+                  <Button
+                    className="
+                      w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 
+                      hover:from-blue-700 hover:to-cyan-600 text-white font-medium 
+                      rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
+                      transform hover:scale-105 active:scale-95
+                    "
+                  >
+                    Login
+                  </Button>
+                </Link>
 
                 {/* Sign up button */}
-                <Button
+                <Link href='/signup'>
+                  <Button
                   variant="outline"
                   className="
                     w-full h-12 bg-white/50 hover:bg-white/70 text-gray-700 
@@ -96,6 +100,7 @@ export default function LadingPage() {
                 >
                   Sign up
                 </Button>
+                </Link>
               </div>
             </div>
 
