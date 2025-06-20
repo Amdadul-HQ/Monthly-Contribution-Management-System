@@ -39,7 +39,7 @@ model PersonalInfo {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  credentials     Credentials     @relation(fields: [memberId],references: [memberId])
+  credentials         Credentials     @relation(fields: [memberId],references: [memberId])
 }
 
 model Credentials {
@@ -52,11 +52,54 @@ model Credentials {
   role                Role
   updatedAt           DateTime        @updatedAt
 
-  personalInfo    PersonalInfo?
+  personalInfo        PersonalInfo?
+  Deposit             Deposit?
 }
 
 model Deposit {
-   id                  String          @id           @default(uuid())  
+   id                       String          @id           @default(uuid())  
+   memberId                 Int             @unique
+   monthlyDepositAmount     Int
+   month                    DateTime
+   referenceName            String
+   paymentProof             String
+   status                   PaymentStatus
+
+   credentials                     Credentials     @relation(fields: [memberId],references: [memberId])
+   depositPaymentMethodHandToHand  DepositPaymentMethodHandToHand?
+   depositPaymentMethodPhone       DepositPaymentMethodPhone? 
+   depositPaymentMethodBank        DepositPaymentMethodBank?
+}
+
+model DepositPaymentMethodHandToHand {
+  id                       String          @id           @default(uuid())  
+  depositId                String          @unique
+  deposit                  Deposit         @relation(fields: [depositId],references: [id])
+
+  reciverName              String
+  date                     DateTime
+  time                     String
+  location                 String
+
+}
+
+model DepositPaymentMethodPhone {
+  id                       String          @id           @default(uuid())  
+  depositId                String          @unique
+  deposit                  Deposit         @relation(fields: [depositId],references: [id])
+
+  paymentMethodName        String
+  phoneNumber              Int
+  transitionID             String
+}
+
+model DepositPaymentMethodBank {
+  id                       String          @id           @default(uuid())  
+  depositId                String          @unique
+  deposit                  Deposit         @relation(fields: [depositId],references: [id])
+
+  bankACNumber             String
+  bankHolderName           String
 }
 
 
@@ -65,6 +108,12 @@ enum Status {
   Suspended
   Deleted
   Rejected
+  Pending
+}
+
+enum PaymentStatus {
+  Completed
+  Canceled
   Pending
 }
 
