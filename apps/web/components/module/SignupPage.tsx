@@ -4,7 +4,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { ArrowLeft, Check, DollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User, Users } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
+import { ArrowLeft, Check, DollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User, Users, Briefcase, UserCheck, CreditCard } from 'lucide-react'
 import { useEffect, useState } from "react"
 
 interface FormData {
@@ -12,10 +13,14 @@ interface FormData {
   fatherName: string
   motherName: string
   address: string
+  occupation: string
   amount: string
   phoneNumber: string
   email: string
   monthlyDeposit: string
+  referenceName: string
+  paymentMethod: string
+  senderPhoneNumber: string
   password: string
   confirmPassword: string
 }
@@ -37,10 +42,14 @@ export default function SignupPage() {
     fatherName: "",
     motherName: "",
     address: "",
+    occupation: "",
     amount: "",
     phoneNumber: "",
     email: "",
     monthlyDeposit: "",
+    referenceName: "",
+    paymentMethod: "",
+    senderPhoneNumber: "",
     password: "",
     confirmPassword: "",
   })
@@ -62,6 +71,7 @@ export default function SignupPage() {
       if (!formData.fatherName.trim()) newErrors.fatherName = "Father's name is required"
       if (!formData.motherName.trim()) newErrors.motherName = "Mother's name is required"
       if (!formData.address.trim()) newErrors.address = "Address is required"
+      if (!formData.occupation.trim()) newErrors.occupation = "Occupation is required"
     }
 
     if (step === 2) {
@@ -80,6 +90,13 @@ export default function SignupPage() {
     }
 
     if (step === 3) {
+      if (!formData.referenceName.trim()) newErrors.referenceName = "Reference name is required"
+      if (!formData.paymentMethod.trim()) newErrors.paymentMethod = "Payment method is required"
+      if (!formData.senderPhoneNumber.trim()) newErrors.senderPhoneNumber = "Sender phone number is required"
+      else if (!/^\+?[\d\s-()]{10,}$/.test(formData.senderPhoneNumber)) newErrors.senderPhoneNumber = "Invalid phone number"
+    }
+
+    if (step === 4) {
       if (!formData.password.trim()) newErrors.password = "Password is required"
       else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters"
 
@@ -109,7 +126,7 @@ export default function SignupPage() {
   }
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) return
+    if (!validateStep(4)) return
 
     setIsSubmitting(true)
 
@@ -128,10 +145,14 @@ export default function SignupPage() {
         fatherName: "",
         motherName: "",
         address: "",
+        occupation: "",
         amount: "",
         phoneNumber: "",
         email: "",
         monthlyDeposit: "",
+        referenceName: "",
+        paymentMethod: "",
+        senderPhoneNumber: "",
         password: "",
         confirmPassword: "",
       })
@@ -194,6 +215,23 @@ export default function SignupPage() {
           />
         </div>
         {errors.motherName && <p className="text-red-500 text-xs">{errors.motherName}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="occupation" className="text-sm font-medium text-gray-700">
+          Occupation
+        </Label>
+        <div className="relative">
+          <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            id="occupation"
+            value={formData.occupation}
+            onChange={(e) => handleInputChange("occupation", e.target.value)}
+            placeholder="Enter your occupation"
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.occupation ? "border-red-400" : ""}`}
+          />
+        </div>
+        {errors.occupation && <p className="text-red-500 text-xs">{errors.occupation}</p>}
       </div>
 
       <div className="space-y-2">
@@ -260,7 +298,7 @@ export default function SignupPage() {
 
       <div className="space-y-2">
         <Label htmlFor="amount" className="text-sm font-medium text-gray-700">
-          Initial Amount ($)
+          Registration Fee ($)
         </Label>
         <div className="relative">
           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -297,6 +335,79 @@ export default function SignupPage() {
   )
 
   const renderStep3 = () => (
+    <div className="space-y-4">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Reference & Payment</h2>
+        <p className="text-gray-600 text-sm">Choose your reference and payment method</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="referenceName" className="text-sm font-medium text-gray-700">
+          Reference Name
+        </Label>
+        <div className="relative">
+          <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Select value={formData.referenceName} onValueChange={(value) => handleInputChange("referenceName", value)}>
+            <SelectTrigger className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.referenceName ? "border-red-400" : ""}`}>
+              <SelectValue placeholder="Select reference name" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="arfan-shojib">Arfan Shojib</SelectItem>
+              <SelectItem value="xhamix-shovo">Xhamix Shovo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {errors.referenceName && <p className="text-red-500 text-xs">{errors.referenceName}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="paymentMethod" className="text-sm font-medium text-gray-700">
+          Payment Method
+        </Label>
+        <div className="relative">
+          <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange("paymentMethod", value)}>
+            <SelectTrigger className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.paymentMethod ? "border-red-400" : ""}`}>
+              <SelectValue placeholder="Select payment method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bkash">bKash</SelectItem>
+              <SelectItem value="nagad">Nagad</SelectItem>
+              <SelectItem value="rocket">Rocket</SelectItem>
+              <SelectItem value="cash">Cash</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {errors.paymentMethod && <p className="text-red-500 text-xs">{errors.paymentMethod}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="senderPhoneNumber" className="text-sm font-medium text-gray-700">
+          Sender Phone Number
+        </Label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            id="senderPhoneNumber"
+            type="tel"
+            value={formData.senderPhoneNumber}
+            onChange={(e) => handleInputChange("senderPhoneNumber", e.target.value)}
+            placeholder="Phone number used for payment"
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.senderPhoneNumber ? "border-red-400" : ""}`}
+          />
+        </div>
+        {errors.senderPhoneNumber && <p className="text-red-500 text-xs">{errors.senderPhoneNumber}</p>}
+      </div>
+
+      <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
+        <p className="text-xs text-gray-600">
+          Please ensure the phone number matches the one used for the selected payment method.
+        </p>
+      </div>
+    </div>
+  )
+
+  const renderStep4 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Security</h2>
@@ -408,9 +519,6 @@ export default function SignupPage() {
         >
           {/* Phone frame */}
           <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-6 relative overflow-hidden min-h-[calc(100vh-100px)]">
-            {/* Notch */}
-            {/* <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-20 h-6 bg-black rounded-full"></div> */}
-
             {/* Content */}
             <div className="h-full flex flex-col">
               {/* Header */}
@@ -436,7 +544,7 @@ export default function SignupPage() {
               {!isSuccess && (
                 <div className="flex justify-center mb-6">
                   <div className="flex space-x-2">
-                    {[1, 2, 3].map((step) => (
+                    {[1, 2, 3, 4].map((step) => (
                       <div
                         key={step}
                         className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -463,6 +571,7 @@ export default function SignupPage() {
                       {currentStep === 1 && renderStep1()}
                       {currentStep === 2 && renderStep2()}
                       {currentStep === 3 && renderStep3()}
+                      {currentStep === 4 && renderStep4()}
                     </>
                   )}
                 </div>
@@ -471,7 +580,7 @@ export default function SignupPage() {
               {/* Action buttons */}
               {!isSuccess && (
                 <div className="mt-6 space-y-1">
-                  {currentStep < 3 ? (
+                  {currentStep < 4 ? (
                     <Button
                       onClick={handleNext}
                       className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"

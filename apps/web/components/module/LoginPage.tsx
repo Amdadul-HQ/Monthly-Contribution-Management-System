@@ -1,16 +1,15 @@
 "use client"
 
-
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { ArrowLeft, Eye, EyeOff, Lock, Mail, Phone } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, Hash, Lock, Mail, Phone } from 'lucide-react'
 import { useEffect, useState } from "react"
 
 export default function LoginPage() {
   const [isVisible, setIsVisible] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [loginType, setLoginType] = useState<"email" | "phone">("email")
+  const [loginType, setLoginType] = useState<"email" | "phone" | "memberid">("email")
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -18,6 +17,58 @@ export default function LoginPage() {
     }, 300)
     return () => clearTimeout(timer)
   }, [])
+
+  const getInputType = () => {
+    switch (loginType) {
+      case "email":
+        return "email"
+      case "phone":
+        return "tel"
+      case "memberid":
+        return "text"
+      default:
+        return "text"
+    }
+  }
+
+  const getPlaceholder = () => {
+    switch (loginType) {
+      case "email":
+        return "Enter your email"
+      case "phone":
+        return "Enter your phone"
+      case "memberid":
+        return "Enter your member ID"
+      default:
+        return "Enter your login"
+    }
+  }
+
+  const getLabel = () => {
+    switch (loginType) {
+      case "email":
+        return "Email Address"
+      case "phone":
+        return "Phone Number"
+      case "memberid":
+        return "Member ID"
+      default:
+        return "Login"
+    }
+  }
+
+  const getIcon = () => {
+    switch (loginType) {
+      case "email":
+        return <Mail className="h-4 w-4 text-gray-400" />
+      case "phone":
+        return <Phone className="h-4 w-4 text-gray-400" />
+      case "memberid":
+        return <Hash className="h-4 w-4 text-gray-400" />
+      default:
+        return <Mail className="h-4 w-4 text-gray-400" />
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-blue-100 to-blue-500 flex items-center justify-center overflow-hidden relative">
@@ -41,9 +92,6 @@ export default function LoginPage() {
         >
           {/* Phone frame */}
           <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-4 relative overflow-hidden min-h-[600px]">
-            {/* Notch */}
-            {/* <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-20 h-6 bg-black rounded-full"></div> */}
-
             {/* Content */}
             <div className="pt-12 pb-8 md:space-y-6">
               {/* Header */}
@@ -75,7 +123,7 @@ export default function LoginPage() {
                 <p className="text-gray-600 text-sm">Sign in to your account</p>
               </div>
 
-              {/* Login type toggle */}
+              {/* Login type toggle - Updated for 3 options */}
               <div
                 className={`
                   flex bg-white/50 rounded-full p-1 transition-all duration-1000 delay-700 ease-out
@@ -108,6 +156,19 @@ export default function LoginPage() {
                   <Phone className="h-3 w-3 mr-1" />
                   Phone
                 </Button>
+                <Button
+                  variant={loginType === "memberid" ? "default" : "ghost"}
+                  size="sm"
+                  className={`flex-1 rounded-full text-xs transition-all duration-300 ${
+                    loginType === "memberid"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
+                      : "text-gray-600 hover:bg-white/30"
+                  }`}
+                  onClick={() => setLoginType("memberid")}
+                >
+                  <Hash className="h-3 w-3 mr-1" />
+                  Member ID
+                </Button>
               </div>
 
               {/* Login form */}
@@ -117,26 +178,27 @@ export default function LoginPage() {
                   ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
                 `}
               >
-                {/* Email/Phone input */}
+                {/* Email/Phone/Member ID input */}
                 <div className="space-y-2">
                   <Label htmlFor="login-input" className="text-sm font-medium text-gray-700">
-                    {loginType === "email" ? "Email Address" : "Phone Number"}
+                    {getLabel()}
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      {loginType === "email" ? (
-                        <Mail className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Phone className="h-4 w-4 text-gray-400" />
-                      )}
+                      {getIcon()}
                     </div>
                     <Input
                       id="login-input"
-                      type={loginType === "email" ? "email" : "tel"}
-                      placeholder={loginType === "email" ? "Enter your email" : "Enter your phone"}
+                      type={getInputType()}
+                      placeholder={getPlaceholder()}
                       className="pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl"
                     />
                   </div>
+                  {loginType === "memberid" && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Your member ID is provided during registration (e.g., MEM001)
+                    </p>
+                  )}
                 </div>
 
                 {/* Password input */}
