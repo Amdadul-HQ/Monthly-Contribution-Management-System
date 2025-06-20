@@ -15,24 +15,61 @@ datasource db {
 }
 
 model PersonalInfo {
-  id              String          @id           @default(uuid())
-  
+  id                  String          @id           @default(uuid())
+  name                String
+  fatherName          String
+  motherName          String
+  address             String
+  occupation          String
+  email               String
+  phone               Int
+  memberId            Int             @unique
+  nid                 Int             @unique
+  status              Status          @default(Pending)
+  totalDeposit        Int
+  montlyDeposit       Int
+  totalMonthDeposit   Int
+  totalPenalties      Int
+  totalPenaltiesMonth Int
+  joingDate           DateTime
+  registrationFee     Int
+  paymentMethod       String
+  refarenceName       String
+  paymentStreak       Int             @default(0)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  credentials     Credentials     @relation(fields: [memberId],references: [memberId])
 }
 
 model Credentials {
-  id              String          @id           @default(uuid())
-  memberId        Int             @unique       @default(autoincrement())
-  name            String 
-  email           String
-  phone           Int
-  password        String
-  role            Role
-  updatedAt       DateTime        @updatedAt
+  id                  String          @id           @default(uuid())  
+  name                String 
+  email               String
+  phone               Int
+  memberId            Int             @unique       @default(autoincrement())
+  password            String
+  role                Role
+  updatedAt           DateTime        @updatedAt
+
+  personalInfo    PersonalInfo?
+}
+
+model Deposit {
+   id                  String          @id           @default(uuid())  
+}
+
+
+enum Status {
+  Active
+  Suspended
+  Deleted
+  Rejected
+  Pending
 }
 
 enum Role {
   MEMBER
-  USER
   ADMIN
 }
 
