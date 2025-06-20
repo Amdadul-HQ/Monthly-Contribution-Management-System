@@ -26,20 +26,28 @@ model PersonalInfo {
   memberId            Int             @unique
   nid                 Int             @unique
   status              Status          @default(Pending)
+  joingDate           DateTime
+  refarenceName       String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  personalInfoStates  PersonalInfoStates?
+  credentials         Credentials     @relation(fields: [memberId],references: [memberId])
+
+}
+
+model PersonalInfoStates {
+  id                  String          @id           @default(uuid())
+  memberId            Int             @unique
   totalDeposit        Int             @default(0)
   montlyDeposit       Int             
   totalMonthDeposit   Int             
   totalPenalties      Int             @default(0)
   totalPenaltiesMonth Int             @default(0)
-  joingDate           DateTime
   registrationFee     Int
   paymentMethod       String
-  refarenceName       String
   paymentStreak       Int             @default(0)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-
-  credentials         Credentials     @relation(fields: [memberId],references: [memberId])
+  personalInfo        PersonalInfo    @relation(fields: [memberId],references: [memberId])
 }
 
 model Credentials {
