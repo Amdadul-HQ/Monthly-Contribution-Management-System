@@ -26,11 +26,11 @@ model PersonalInfo {
   memberId            Int             @unique
   nid                 Int             @unique
   status              Status          @default(Pending)
-  totalDeposit        Int
-  montlyDeposit       Int
-  totalMonthDeposit   Int
-  totalPenalties      Int
-  totalPenaltiesMonth Int
+  totalDeposit        Int             @default(0)
+  montlyDeposit       Int             
+  totalMonthDeposit   Int             
+  totalPenalties      Int             @default(0)
+  totalPenaltiesMonth Int             @default(0)
   joingDate           DateTime
   registrationFee     Int
   paymentMethod       String
@@ -64,6 +64,7 @@ model Deposit {
    referenceName            String
    paymentProof             String
    status                   PaymentStatus
+   penalty                  Int             @default(0)
 
    credentials                     Credentials     @relation(fields: [memberId],references: [memberId])
    depositPaymentMethodHandToHand  DepositPaymentMethodHandToHand?
