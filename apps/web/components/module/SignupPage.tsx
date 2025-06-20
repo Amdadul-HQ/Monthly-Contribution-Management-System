@@ -5,18 +5,19 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
-import { ArrowLeft, Check, DollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User, Users, Briefcase, UserCheck, CreditCard } from 'lucide-react'
+import { ArrowLeft, Check, DollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User, Users, Briefcase, UserCheck, CreditCard, Hash } from 'lucide-react'
 import { useEffect, useState } from "react"
 
 interface FormData {
   name: string
   fatherName: string
   motherName: string
-  address: string
   occupation: string
-  amount: string
+  address: string
+  nidNumber: string
   phoneNumber: string
   email: string
+  amount: string
   monthlyDeposit: string
   referenceName: string
   paymentMethod: string
@@ -41,11 +42,12 @@ export default function SignupPage() {
     name: "",
     fatherName: "",
     motherName: "",
-    address: "",
     occupation: "",
-    amount: "",
+    address: "",
+    nidNumber: "",
     phoneNumber: "",
     email: "",
+    amount: "",
     monthlyDeposit: "",
     referenceName: "",
     paymentMethod: "",
@@ -70,18 +72,23 @@ export default function SignupPage() {
       if (!formData.name.trim()) newErrors.name = "Name is required"
       if (!formData.fatherName.trim()) newErrors.fatherName = "Father's name is required"
       if (!formData.motherName.trim()) newErrors.motherName = "Mother's name is required"
-      if (!formData.address.trim()) newErrors.address = "Address is required"
       if (!formData.occupation.trim()) newErrors.occupation = "Occupation is required"
     }
 
     if (step === 2) {
+      if (!formData.address.trim()) newErrors.address = "Address is required"
+      if (!formData.nidNumber.trim()) newErrors.nidNumber = "NID number is required"
+      else if (!/^\d{10,17}$/.test(formData.nidNumber.replace(/\s/g, ''))) newErrors.nidNumber = "Invalid NID number format"
+      
       if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required"
       else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phoneNumber)) newErrors.phoneNumber = "Invalid phone number"
+    }
 
+    if (step === 3) {
       if (!formData.email.trim()) newErrors.email = "Email is required"
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email address"
 
-      if (!formData.amount.trim()) newErrors.amount = "Initial amount is required"
+      if (!formData.amount.trim()) newErrors.amount = "Registration fee is required"
       else if (isNaN(Number(formData.amount)) || Number(formData.amount) < 0) newErrors.amount = "Invalid amount"
 
       if (!formData.monthlyDeposit.trim()) newErrors.monthlyDeposit = "Monthly deposit is required"
@@ -89,14 +96,14 @@ export default function SignupPage() {
         newErrors.monthlyDeposit = "Invalid amount"
     }
 
-    if (step === 3) {
+    if (step === 4) {
       if (!formData.referenceName.trim()) newErrors.referenceName = "Reference name is required"
       if (!formData.paymentMethod.trim()) newErrors.paymentMethod = "Payment method is required"
       if (!formData.senderPhoneNumber.trim()) newErrors.senderPhoneNumber = "Sender phone number is required"
       else if (!/^\+?[\d\s-()]{10,}$/.test(formData.senderPhoneNumber)) newErrors.senderPhoneNumber = "Invalid phone number"
     }
 
-    if (step === 4) {
+    if (step === 5) {
       if (!formData.password.trim()) newErrors.password = "Password is required"
       else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters"
 
@@ -126,7 +133,7 @@ export default function SignupPage() {
   }
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return
+    if (!validateStep(5)) return
 
     setIsSubmitting(true)
 
@@ -144,11 +151,12 @@ export default function SignupPage() {
         name: "",
         fatherName: "",
         motherName: "",
-        address: "",
         occupation: "",
-        amount: "",
+        address: "",
+        nidNumber: "",
         phoneNumber: "",
         email: "",
+        amount: "",
         monthlyDeposit: "",
         referenceName: "",
         paymentMethod: "",
@@ -233,51 +241,17 @@ export default function SignupPage() {
         </div>
         {errors.occupation && <p className="text-red-500 text-xs">{errors.occupation}</p>}
       </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-          Address
-        </Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Textarea
-            id="address"
-            value={formData.address}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-            placeholder="Enter your complete address"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl resize-none h-20 ${errors.address ? "border-red-400" : ""}`}
-          />
-        </div>
-        {errors.address && <p className="text-red-500 text-xs">{errors.address}</p>}
-      </div>
     </div>
   )
 
   const renderStep2 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Contact & Financial</h2>
-        <p className="text-gray-600 text-sm">Your contact and financial details</p>
+        <h2 className="text-xl font-bold text-gray-900">Address & Contact</h2>
+        <p className="text-gray-600 text-sm">Your address and contact information</p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
-          Phone Number
-        </Label>
-        <div className="relative">
-          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            id="phoneNumber"
-            type="tel"
-            value={formData.phoneNumber}
-            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-            placeholder="Enter your phone number"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.phoneNumber ? "border-red-400" : ""}`}
-          />
-        </div>
-        {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber}</p>}
-      </div>
-
+      {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm font-medium text-gray-700">
           Email Address
@@ -296,6 +270,77 @@ export default function SignupPage() {
         {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
       </div>
 
+      {/* Nid  */}
+      <div className="space-y-2">
+        <Label htmlFor="nidNumber" className="text-sm font-medium text-gray-700">
+          NID Number
+        </Label>
+        <div className="relative">
+          <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            id="nidNumber"
+            value={formData.nidNumber}
+            onChange={(e) => handleInputChange("nidNumber", e.target.value)}
+            placeholder="Enter your NID number"
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.nidNumber ? "border-red-400" : ""}`}
+          />
+        </div>
+        {errors.nidNumber && <p className="text-red-500 text-xs">{errors.nidNumber}</p>}
+      </div>
+
+      {/*Phone Number  */}
+      <div className="space-y-2">
+        <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
+          Personal Phone Number
+        </Label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            id="phoneNumber"
+            type="tel"
+            value={formData.phoneNumber}
+            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+            placeholder="Enter your phone number"
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.phoneNumber ? "border-red-400" : ""}`}
+          />
+        </div>
+        {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber}</p>}
+      </div>
+
+      {/* Address */}
+      <div className="space-y-2">
+        <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+          Address
+        </Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Textarea
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleInputChange("address", e.target.value)}
+            placeholder="Enter your complete address"
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl resize-none h-20 ${errors.address ? "border-red-400" : ""}`}
+          />
+        </div>
+        {errors.address && <p className="text-red-500 text-xs">{errors.address}</p>}
+      </div>
+
+
+      {/* <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
+        <p className="text-xs text-gray-600">
+          Please ensure your NID number is correct as it will be used for verification purposes.
+        </p>
+      </div> */}
+    </div>
+  )
+
+  const renderStep3 = () => (
+    <div className="space-y-4">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Financial</h2>
+        <p className="text-gray-600 text-sm">Your financial details</p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="amount" className="text-sm font-medium text-gray-700">
           Registration Fee ($)
@@ -307,7 +352,7 @@ export default function SignupPage() {
             type="number"
             value={formData.amount}
             onChange={(e) => handleInputChange("amount", e.target.value)}
-            placeholder="Enter initial deposit amount"
+            placeholder="Enter registration fee amount"
             className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.amount ? "border-red-400" : ""}`}
           />
         </div>
@@ -331,10 +376,16 @@ export default function SignupPage() {
         </div>
         {errors.monthlyDeposit && <p className="text-red-500 text-xs">{errors.monthlyDeposit}</p>}
       </div>
+
+      <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
+        <p className="text-xs text-gray-600">
+          The registration fee is a one-time payment. Monthly deposits will be collected regularly.
+        </p>
+      </div>
     </div>
   )
 
-  const renderStep3 = () => (
+  const renderStep4 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Reference & Payment</h2>
@@ -407,7 +458,7 @@ export default function SignupPage() {
     </div>
   )
 
-  const renderStep4 = () => (
+  const renderStep5 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Security</h2>
@@ -544,7 +595,7 @@ export default function SignupPage() {
               {!isSuccess && (
                 <div className="flex justify-center mb-6">
                   <div className="flex space-x-2">
-                    {[1, 2, 3, 4].map((step) => (
+                    {[1, 2, 3, 4, 5].map((step) => (
                       <div
                         key={step}
                         className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -572,6 +623,7 @@ export default function SignupPage() {
                       {currentStep === 2 && renderStep2()}
                       {currentStep === 3 && renderStep3()}
                       {currentStep === 4 && renderStep4()}
+                      {currentStep === 5 && renderStep5()}
                     </>
                   )}
                 </div>
@@ -580,7 +632,7 @@ export default function SignupPage() {
               {/* Action buttons */}
               {!isSuccess && (
                 <div className="mt-6 space-y-1">
-                  {currentStep < 4 ? (
+                  {currentStep < 5 ? (
                     <Button
                       onClick={handleNext}
                       className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
