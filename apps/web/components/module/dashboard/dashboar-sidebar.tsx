@@ -66,7 +66,7 @@ const adminNavItems = [
 
 export function DashboardSidebar({ userType }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const navItems = userType === "member" ? memberNavItems : adminNavItems
+  const navItems = userType === "admin" ? memberNavItems : adminNavItems
 
   return (
     <Sidebar variant="inset">
