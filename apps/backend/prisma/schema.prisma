@@ -41,7 +41,7 @@ model PersonalInfoStates {
   memberId            Int             @unique
   totalDeposit        Int             @default(0)
   montlyDeposit       Int             
-  totalMonthDeposit   Int             
+  totalMonthDeposit   Int             @default(0)
   totalPenalties      Int             @default(0)
   totalPenaltiesMonth Int             @default(0)
   registrationFee     Int
@@ -57,7 +57,7 @@ model Credentials {
   phone               Int
   memberId            Int             @unique       @default(autoincrement())
   password            String
-  role                Role
+  role                Role            @default(MEMBER)  
   updatedAt           DateTime        @updatedAt
 
   personalInfo        PersonalInfo?
