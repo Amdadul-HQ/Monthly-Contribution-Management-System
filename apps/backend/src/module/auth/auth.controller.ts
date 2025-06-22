@@ -1,9 +1,12 @@
+import ApiError from "../../app/error/ApiError";
 import { catchAsync } from "../../app/helper/catchAsync";
 import { AuthService } from "./auth.service";
+import httpStatus from 'http-status';
+import bcrypt from 'bcryptjs';
 
 const signup = catchAsync(async(req,res) => {
     
-    const {name,fatherName,motherName,address,occupation,email,phone,nid,joingDate,refrenceName,montlyDeposit,registrationFee,paymentMethod,password} = req.body;
+    const {name,fatherName,motherName,address,occupation,email,phone,nid,joingDate,refarenceName,montlyDeposit,registrationFee,paymentMethod,password} = req.body;
 
     const personalInfo = {
         name,
@@ -15,7 +18,7 @@ const signup = catchAsync(async(req,res) => {
         phone,
         nid,
         joingDate,
-        refrenceName,
+        refarenceName,
     }
 
     const personalInfoStates = {
@@ -24,14 +27,20 @@ const signup = catchAsync(async(req,res) => {
         paymentMethod
     }
 
+    const hasPassword = await bcrypt.hash(password, 10);
+    if (!hasPassword) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'bcrypt solt generate problem');
+    }
+
     const credentials = {
         name,
         email,
         phone,
-        password,
+        password:hasPassword,
     }
 
-    const result = await AuthService.signup()
+
+    const result = await AuthService.signup(personalInfo,personalInfoStates,credentials)
 })
 
 
