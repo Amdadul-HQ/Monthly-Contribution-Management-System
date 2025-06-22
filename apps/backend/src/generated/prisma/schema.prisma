@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PersonalInfo {
+  id            String   @id @default(uuid())
+  name          String
+  fatherName    String
+  motherName    String
+  address       String
+  occupation    String
+  email         String
+  phone         Int
+  memberId      Int      @unique
+  nid           Int      @unique
+  status        Status   @default(Pending)
+  joingDate     DateTime
+  refarenceName String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  personalInfoStates PersonalInfoStates?
+  credentials        Credentials         @relation(fields: [memberId], references: [memberId])
+}
+
+model PersonalInfoStates {
+  id                  String       @id @default(uuid())
+  memberId            Int          @unique
+  totalDeposit        Int          @default(0)
+  montlyDeposit       Int
+  totalMonthDeposit   Int
+  totalPenalties      Int          @default(0)
+  totalPenaltiesMonth Int          @default(0)
+  registrationFee     Int
+  paymentMethod       String
+  paymentStreak       Int          @default(0)
+  personalInfo        PersonalInfo @relation(fields: [memberId], references: [memberId])
+}
+
+model Credentials {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     Int
+  memberId  Int      @unique @default(autoincrement())
+  password  String
+  role      Role
+  updatedAt DateTime @updatedAt
+
+  personalInfo PersonalInfo?
+  Deposit      Deposit?
+}
+
+model Deposit {
+  id                   String        @id @default(uuid())
+  memberId             Int           @unique
+  monthlyDepositAmount Int
+  month                DateTime
+  referenceName        String
+  paymentProof         String
+  status               PaymentStatus
+  penalty              Int           @default(0)
+
+  credentials                    Credentials                     @relation(fields: [memberId], references: [memberId])
+  depositPaymentMethodHandToHand DepositPaymentMethodHandToHand?
+  depositPaymentMethodPhone      DepositPaymentMethodPhone?
+  depositPaymentMethodBank       DepositPaymentMethodBank?
+}
+
+model DepositPaymentMethodHandToHand {
+  id        String  @id @default(uuid())
+  depositId String  @unique
+  deposit   Deposit @relation(fields: [depositId], references: [id])
+
+  reciverName String
+  date        DateTime
+  time        String
+  location    String
+}
+
+model DepositPaymentMethodPhone {
+  id        String  @id @default(uuid())
+  depositId String  @unique
+  deposit   Deposit @relation(fields: [depositId], references: [id])
+
+  paymentMethodName String
+  phoneNumber       Int
+  transitionID      String
+}
+
+model DepositPaymentMethodBank {
+  id        String  @id @default(uuid())
+  depositId String  @unique
+  deposit   Deposit @relation(fields: [depositId], references: [id])
+
+  bankACNumber   String
+  bankHolderName String
+}
+
+enum Status {
+  Active
+  Suspended
+  Deleted
+  Rejected
+  Pending
+}
+
+enum PaymentStatus {
+  Completed
+  Canceled
+  Pending
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
