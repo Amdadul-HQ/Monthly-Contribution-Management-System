@@ -7,13 +7,13 @@ export interface PersonalInfo {
   email: string;
   phone: number; // if received from req.body, prefer `string`
   nid: number;
-  joingDate: Date; // ISO string from frontend, can convert to Date later
-  refarenceName: string;
+  joiningDate: string; // ISO string from frontend, can convert to Date later
+  referenceName: string;
   senderPhoneNumber: number;
 }
 
 export interface PersonalInfoStates {
-  montlyDeposit: number;
+  monthlyDeposit: number;
   registrationFee: number;
   paymentMethod: string;
 }

@@ -6,9 +6,8 @@ const signupMemberSchema = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
     phone: z
-      .string()
-      .min(10, "Phone must be at least 10 digits")
-      .max(15, "Phone can't exceed 15 digits"),
+      .number()
+      .min(10, "Phone must be at least 10 digits"),
     password: z.string().min(6, "Password must be at least 6 characters"),
 
     // personalInfo
@@ -19,16 +18,16 @@ const signupMemberSchema = z.object({
     nid: z
       .number({ invalid_type_error: "NID must be a number" })
       .int("NID must be an integer"),
-    joingDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    joiningDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Joining date must be a valid date",
     }),
-    refarenceName: z.string().min(1, "Reference name is required"),
+    referenceName: z.string().min(1, "Reference name is required"),
     senderPhoneNumber: z
       .number()
-      .min(1, "Sender phone number is required"),
+      .min(10, "Sender phone number is required"),
 
     // personalInfoStates
-    montlyDeposit: z
+    monthlyDeposit: z
       .number({ invalid_type_error: "Monthly deposit must be a number" })
       .int("Monthly deposit must be an integer"),
     registrationFee: z

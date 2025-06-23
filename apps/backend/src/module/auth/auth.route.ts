@@ -9,3 +9,5 @@ router.post('/signup',
     validateRequest(AuthValidationSchema.signupMemberSchema),
     AuthController.signup
 )
+
+export const AuthRoutes = router

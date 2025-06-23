@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 
 const signup = catchAsync(async(req,res) => {
     
-    const {name,fatherName,motherName,address,occupation,email,phone,nid,joingDate,refarenceName,montlyDeposit,registrationFee,paymentMethod,password} = req.body;
+    const {name,fatherName,motherName,address,occupation,email,phone,nid,joiningDate,referenceName,senderPhoneNumber,monthlyDeposit,registrationFee,paymentMethod,password} = req.body;
 
     const personalInfo = {
         name,
@@ -17,12 +17,13 @@ const signup = catchAsync(async(req,res) => {
         email,
         phone,
         nid,
-        joingDate,
-        refarenceName,
+        joiningDate,
+        referenceName,
+        senderPhoneNumber
     }
 
     const personalInfoStates = {
-        montlyDeposit,
+        monthlyDeposit,
         registrationFee,
         paymentMethod
     }
