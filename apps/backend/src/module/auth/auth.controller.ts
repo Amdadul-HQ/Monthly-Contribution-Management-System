@@ -61,6 +61,11 @@ const login = catchAsync(async(req,res) => {
     httpOnly: true,
     });
 
+    res.cookie('accessToken',result.accessToken,{
+        secure:false,
+        httpOnly:true
+    });
+
     // accessToken
     sendResponse(res, {
         success: true,
