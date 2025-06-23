@@ -8,7 +8,7 @@ const signupMemberSchema = z.object({
     phone: z
       .number()
       .min(10, "Phone must be at least 10 digits"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
 
     // personalInfo
     fatherName: z.string().min(1, "Father's name is required"),
@@ -37,7 +37,26 @@ const signupMemberSchema = z.object({
   }),
 });
 
+const loginSchema = z.object({
+  body: z.object({
+    email: z.string().email("Invalid email address").optional(),
+    phone: z
+      .number()
+      .min(10, "Phone must be at least 10 digits")
+      .optional(),
+    memberId: z.number().min(1, "Member Id is Required").optional(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+  }).refine(data => {
+    // At least one of email, phone, or memberId must be provided
+    return !!data.email || !!data.phone || !!data.memberId;
+  }, {
+    message: "At least one of email, phone, or memberId is required",
+    path: ["email", "phone", "memberId"], // Specify the path for the error
+  })
+});
+
 
 export const AuthValidationSchema = {
-    signupMemberSchema
+    signupMemberSchema,
+    loginSchema
 }

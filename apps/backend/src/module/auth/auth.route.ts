@@ -10,4 +10,9 @@ router.post('/signup',
     AuthController.signup
 )
 
+router.post('/login',
+    validateRequest(AuthValidationSchema.loginSchema),
+    AuthController.login
+)
+
 export const AuthRoutes = router

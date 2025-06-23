@@ -52,7 +52,28 @@ const signup = catchAsync(async(req,res) => {
   });
 })
 
+const login = catchAsync(async(req,res) => {
+    
+    const result = await AuthService.login(req.body)
+    // refeshtoken
+    res.cookie('refeshToken', result.refeshToken, {
+    secure: false,
+    httpOnly: true,
+    });
+
+    // accessToken
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.CREATED,
+        message: 'Login Successfully',
+        data: {
+      accessToken: result.accessToken,
+    },
+    });
+ } )
+
 
 export const AuthController = {
-    signup
+    signup,
+    login
 }
