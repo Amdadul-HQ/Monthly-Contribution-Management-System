@@ -9,6 +9,7 @@ export interface PersonalInfo {
   nid: number;
   joingDate: Date; // ISO string from frontend, can convert to Date later
   refarenceName: string;
+  senderPhoneNumber: number;
 }
 
 export interface PersonalInfoStates {

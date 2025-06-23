@@ -23,6 +23,9 @@ const signupMemberSchema = z.object({
       message: "Joining date must be a valid date",
     }),
     refarenceName: z.string().min(1, "Reference name is required"),
+    senderPhoneNumber: z
+      .number()
+      .min(1, "Sender phone number is required"),
 
     // personalInfoStates
     montlyDeposit: z

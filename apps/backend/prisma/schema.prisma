@@ -28,6 +28,7 @@ model PersonalInfo {
   status              Status          @default(Pending)
   joingDate           DateTime
   refarenceName       String
+  senderPhoneNumber   Int
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   
