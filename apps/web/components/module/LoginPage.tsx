@@ -3,13 +3,66 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { ArrowLeft, Eye, EyeOff, Hash, Lock, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Hash, Lock, Mail, Phone } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { login } from "@/service/authService"
+
+// Define validation schemas for each login type
+const emailSchema = z.object({
+  login: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+})
+
+const phoneSchema = z.object({
+  login: z.string().regex(/^\+?[\d\s\-$$$$]+$/, "Please enter a valid phone number"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+})
+
+const memberIdSchema = z.object({
+  login: z.string().min(1, "Member ID must be at least 3 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+})
+
+type FormData = z.infer<typeof emailSchema>
 
 export default function LoginPage() {
   const [isVisible, setIsVisible] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loginType, setLoginType] = useState<"email" | "phone" | "memberid">("email")
+
+  // Get the appropriate schema based on login type
+  const getSchema = () => {
+    switch (loginType) {
+      case "email":
+        return emailSchema
+      case "phone":
+        return phoneSchema
+      case "memberid":
+        return memberIdSchema
+      default:
+        return emailSchema
+    }
+  }
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    clearErrors,
+  } = useForm<FormData>({
+    resolver: zodResolver(getSchema()),
+    mode: "onChange",
+  })
+
+  // Reset form when login type changes
+  useEffect(() => {
+    reset()
+    clearErrors()
+  }, [loginType, reset, clearErrors])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -17,6 +70,45 @@ export default function LoginPage() {
     }, 300)
     return () => clearTimeout(timer)
   }, [])
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      let credentials;
+      console.log("Form submitted:", { ...data, loginType })
+      
+      if(loginType=="email"){
+        credentials = {
+          email:data.login,
+          password:data.password
+        }
+      }
+
+      if(loginType == "phone"){
+        credentials = {
+          phone:data.login,
+          password:data.password
+        }
+      }
+
+      if(loginType == "memberid"){
+        credentials = {
+          memberId:data.login,
+          password:data.password
+        }
+      }
+
+      console.log(credentials)
+      if(credentials){
+        const res = await login(credentials);
+        console.log(res)
+      }
+      // Simulate API call
+      // alert(`Login successful with ${loginType}: ${data.login}`)
+    } catch (error) {
+      console.error("Login failed:", error)
+      alert("Login failed. Please try again.")
+    }
+  }
 
   const getInputType = () => {
     switch (loginType) {
@@ -123,7 +215,7 @@ export default function LoginPage() {
                 <p className="text-gray-600 text-sm">Sign in to your account</p>
               </div>
 
-              {/* Login type toggle - Updated for 3 options */}
+              {/* Login type toggle */}
               <div
                 className={`
                   flex bg-white/50 rounded-full p-1 transition-all duration-1000 delay-700 ease-out
@@ -131,6 +223,7 @@ export default function LoginPage() {
                 `}
               >
                 <Button
+                  type="button"
                   variant={loginType === "email" ? "default" : "ghost"}
                   size="sm"
                   className={`flex-1 rounded-full text-xs transition-all duration-300 ${
@@ -144,6 +237,7 @@ export default function LoginPage() {
                   Email
                 </Button>
                 <Button
+                  type="button"
                   variant={loginType === "phone" ? "default" : "ghost"}
                   size="sm"
                   className={`flex-1 rounded-full text-xs transition-all duration-300 ${
@@ -157,6 +251,7 @@ export default function LoginPage() {
                   Phone
                 </Button>
                 <Button
+                  type="button"
                   variant={loginType === "memberid" ? "default" : "ghost"}
                   size="sm"
                   className={`flex-1 rounded-full text-xs transition-all duration-300 ${
@@ -173,6 +268,7 @@ export default function LoginPage() {
 
               {/* Login form */}
               <form
+                onSubmit={handleSubmit(onSubmit)}
                 className={`
                   space-y-4 transition-all duration-1000 delay-900 ease-out
                   ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
@@ -191,10 +287,14 @@ export default function LoginPage() {
                       id="login-input"
                       type={getInputType()}
                       placeholder={getPlaceholder()}
-                      className="pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl"
+                      className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+                        errors.login ? "border-red-400 focus:border-red-400" : ""
+                      }`}
+                      {...register("login")}
                     />
                   </div>
-                  {loginType === "memberid" && (
+                  {errors.login && <p className="text-xs text-red-500 mt-1">{errors.login.message}</p>}
+                  {loginType === "memberid" && !errors.login && (
                     <p className="text-xs text-gray-500 mt-1">
                       Your member ID is provided during registration (e.g., MEM001)
                     </p>
@@ -214,7 +314,10 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      className="pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl"
+                      className={`pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+                        errors.password ? "border-red-400 focus:border-red-400" : ""
+                      }`}
+                      {...register("password")}
                     />
                     <Button
                       type="button"
@@ -230,11 +333,16 @@ export default function LoginPage() {
                       )}
                     </Button>
                   </div>
+                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
                 </div>
 
                 {/* Forgot password */}
                 <div className="text-right">
-                  <Button variant="link" className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto font-medium">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto font-medium"
+                  >
                     Forgot Password?
                   </Button>
                 </div>
@@ -242,14 +350,16 @@ export default function LoginPage() {
                 {/* Login button */}
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="
                     w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 
                     hover:from-blue-700 hover:to-cyan-600 text-white font-medium 
                     rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 
                     transform hover:scale-105 active:scale-95 mt-6
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                   "
                 >
-                  Login
+                  {isSubmitting ? "Signing in..." : "Login"}
                 </Button>
 
                 {/* Divider */}
@@ -264,8 +374,12 @@ export default function LoginPage() {
 
                 {/* Sign up link */}
                 <div className="text-center">
-                  <span className="text-sm text-gray-600">Don't have an account? </span>
-                  <Button variant="link" className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium">
+                  <span className="text-sm text-gray-600">{"Don't have an account? "}</span>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium"
+                  >
                     Sign up
                   </Button>
                 </div>

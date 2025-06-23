@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
 import { FieldValues } from "react-hook-form";
 
 export const signUpMember = async (memberData: FieldValues) => {
@@ -37,15 +37,15 @@ export const login = async (data: FieldValues) => {
 
     const result = await res.json();
 
-    if (result.success && result?.data?.accessToken) {
-      const cookieStore = await cookies();
-      cookieStore.set("accessToken", result.data.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        sameSite: "lax",
-      });
-    }
+    // if (result.success && result?.data?.accessToken) {
+    //   const cookieStore = await cookies();
+    //   cookieStore.set("accessToken", result.data.accessToken, {
+    //     httpOnly: true,
+    //     secure: process.env.NODE_ENV === "production",
+    //     path: "/",
+    //     sameSite: "lax",
+    //   });
+    // }
 
     return result;
   } catch (error: any) {
