@@ -30,6 +30,7 @@ import { format } from "date-fns"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { signUpMember } from "@/service/authService"
 
 const signupSchema = z
   .object({
@@ -41,18 +42,18 @@ const signupSchema = z
 
     // Step 2: Address & Contact
     email: z.string().min(1, "Email is required").email("Invalid email address"),
-    nidNumber: z
+    nid: z
       .string()
       .min(1, "NID number is required")
       .regex(/^\d{10,17}$/, "NID number must be 10-17 digits"),
-    phoneNumber: z
+    phone: z
       .string()
       .min(1, "Phone number is required")
       .regex(/^\+?[\d\s-()]{10,}$/, "Invalid phone number format"),
     address: z.string().min(1, "Address is required"),
 
     // Step 3: Financial
-    amount: z
+    registrationFee: z
       .string()
       .min(1, "Registration fee is required")
       .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Invalid amount"),
@@ -117,9 +118,9 @@ export default function SignupPage() {
       case 1:
         return ["name", "fatherName", "motherName", "occupation"]
       case 2:
-        return ["email", "nidNumber", "phoneNumber", "address"]
+        return ["email", "nid", "phone", "address"]
       case 3:
-        return ["amount", "monthlyDeposit", "joiningDate"]
+        return ["registrationFee", "monthlyDeposit", "joiningDate"]
       case 4:
         return ["referenceName", "paymentMethod", "senderPhoneNumber"]
       case 5:
@@ -150,19 +151,32 @@ export default function SignupPage() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      console.log("Form Data:", data)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      console.log(data)
+        // Convert fields to appropriate types
+    const formattedData = {
+      ...data,
+      registrationFee: parseFloat(data.registrationFee), // Convert to number
+      monthlyDeposit: parseFloat(data.monthlyDeposit), // Convert to number
+      phone:parseFloat(data.phone),
+      senderPhoneNumber:parseFloat(data.senderPhoneNumber),
+      nid:parseFloat(data.nid),
+      joiningDate: data.joiningDate.toISOString(), // Convert to ISO string if needed
+    };
+    console.log(formattedData); // Log the formatted data
+    // Simulate API call
+    const res = await signUpMember(formattedData);
+
+      console.log(res)
 
       setIsSubmitting(false)
-      setIsSuccess(true)
+      // setIsSuccess(true)
 
-      // Reset form after success
-      setTimeout(() => {
-        setIsSuccess(false)
-        setCurrentStep(1)
-        reset()
-      }, 3000)
+      // // Reset form after success
+      // setTimeout(() => {
+      //   setIsSuccess(false)
+      //   setCurrentStep(1)
+      //   reset()
+      // }, 3000)
     } catch (error) {
       setIsSubmitting(false)
       console.error("Submission error:", error)
@@ -283,15 +297,15 @@ export default function SignupPage() {
         <div className="relative">
           <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            id="nidNumber"
-            {...register("nidNumber")}
+            id="nid"
+            {...register("nid")}
             placeholder="Enter your NID number"
             className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-              errors.nidNumber ? "border-red-400" : ""
+              errors.nid ? "border-red-400" : ""
             }`}
           />
         </div>
-        {errors.nidNumber && <p className="text-red-500 text-xs">{errors.nidNumber.message}</p>}
+        {errors.nid && <p className="text-red-500 text-xs">{errors.nid.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -301,16 +315,16 @@ export default function SignupPage() {
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            id="phoneNumber"
-            type="tel"
-            {...register("phoneNumber")}
+            id="phone"
+            type="number"
+            {...register("phone")}
             placeholder="Enter your phone number"
             className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-              errors.phoneNumber ? "border-red-400" : ""
+              errors.phone ? "border-red-400" : ""
             }`}
           />
         </div>
-        {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}
+        {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -347,16 +361,16 @@ export default function SignupPage() {
         <div className="relative">
           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            id="amount"
+            id="registrationFee"
             type="number"
-            {...register("amount")}
+            {...register("registrationFee")}
             placeholder="Enter registration fee amount"
             className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-              errors.amount ? "border-red-400" : ""
+              errors.registrationFee ? "border-red-400" : ""
             }`}
           />
         </div>
-        {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
+        {errors.registrationFee && <p className="text-red-500 text-xs">{errors.registrationFee.message}</p>}
       </div>
 
       <div className="space-y-2">
