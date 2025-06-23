@@ -85,14 +85,14 @@ export default function LoginPage() {
 
       if(loginType == "phone"){
         credentials = {
-          phone:data.login,
+          phone:parseFloat(data.login),
           password:data.password
         }
       }
 
       if(loginType == "memberid"){
         credentials = {
-          memberId:data.login,
+          memberId:parseFloat(data.login),
           password:data.password
         }
       }
