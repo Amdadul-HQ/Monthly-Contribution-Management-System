@@ -22,13 +22,13 @@ model PersonalInfo {
   address             String
   occupation          String
   email               String
-  phone               Int
+  phone               BigInt
   memberId            Int             @unique
-  nid                 Int             @unique
+  nid                 BigInt             @unique
   status              Status          @default(Pending)
   joiningDate         DateTime
   referenceName       String
-  senderPhoneNumber   Int
+  senderPhoneNumber   BigInt
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   
@@ -41,7 +41,7 @@ model PersonalInfoStates {
   id                  String          @id           @default(uuid())
   memberId            Int             @unique
   totalDeposit        Int             @default(0)
-  monthlyDeposit      Int             
+  monthlyDeposit      BigInt             
   totalMonthDeposit   Int             @default(0)
   totalPenalties      Int             @default(0)
   totalPenaltiesMonth Int             @default(0)
@@ -68,7 +68,7 @@ model Credentials {
 model Deposit {
    id                       String          @id           @default(uuid())  
    memberId                 Int             @unique
-   monthlyDepositAmount     Int
+   monthlyDepositAmount     BigInt
    month                    DateTime
    referenceName            String
    paymentProof             String
@@ -99,7 +99,7 @@ model DepositPaymentMethodPhone {
   deposit                  Deposit         @relation(fields: [depositId],references: [id])
 
   paymentMethodName        String
-  phoneNumber              Int
+  phoneNumber              BigInt
   transitionID             String
 }
 

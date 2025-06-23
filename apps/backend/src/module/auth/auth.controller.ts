@@ -3,6 +3,7 @@ import { catchAsync } from "../../app/helper/catchAsync";
 import { AuthService } from "./auth.service";
 import httpStatus from 'http-status';
 import bcrypt from 'bcryptjs';
+import { sendResponse } from "../../app/shared/sendResponse";
 
 const signup = catchAsync(async(req,res) => {
     
@@ -42,6 +43,13 @@ const signup = catchAsync(async(req,res) => {
 
 
     const result = await AuthService.signup(personalInfo,personalInfoStates,credentials)
+
+    sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: 'Member Account Created Successfully',
+    data: result
+  });
 })
 
 
