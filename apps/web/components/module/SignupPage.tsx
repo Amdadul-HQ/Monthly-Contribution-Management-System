@@ -5,30 +5,84 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
-import { ArrowLeft, Check, DollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User, Users, Briefcase, UserCheck, CreditCard, Hash } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  DollarSign,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  Users,
+  Briefcase,
+  UserCheck,
+  CreditCard,
+  Hash,
+  CalendarIcon,
+} from "lucide-react"
 import { useEffect, useState } from "react"
+import { Calendar } from "@workspace/ui/components/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover"
+import { format } from "date-fns"
+import { useForm, Controller } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
-interface FormData {
-  name: string
-  fatherName: string
-  motherName: string
-  occupation: string
-  address: string
-  nidNumber: string
-  phoneNumber: string
-  email: string
-  amount: string
-  monthlyDeposit: string
-  referenceName: string
-  paymentMethod: string
-  senderPhoneNumber: string
-  password: string
-  confirmPassword: string
-}
+const signupSchema = z
+  .object({
+    // Step 1: Personal Information
+    name: z.string().min(1, "Name is required").min(2, "Name must be at least 2 characters"),
+    fatherName: z.string().min(1, "Father's name is required"),
+    motherName: z.string().min(1, "Mother's name is required"),
+    occupation: z.string().min(1, "Occupation is required"),
 
-interface FormErrors {
-  [key: string]: string
-}
+    // Step 2: Address & Contact
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    nidNumber: z
+      .string()
+      .min(1, "NID number is required")
+      .regex(/^\d{10,17}$/, "NID number must be 10-17 digits"),
+    phoneNumber: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^\+?[\d\s-()]{10,}$/, "Invalid phone number format"),
+    address: z.string().min(1, "Address is required"),
+
+    // Step 3: Financial
+    amount: z
+      .string()
+      .min(1, "Registration fee is required")
+      .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Invalid amount"),
+    monthlyDeposit: z
+      .string()
+      .min(1, "Monthly deposit is required")
+      .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Invalid amount"),
+    joiningDate: z.date({
+      required_error: "Joining date is required",
+      invalid_type_error: "Please select a valid date",
+    }),
+
+    // Step 4: Reference & Payment
+    referenceName: z.string().min(1, "Reference name is required"),
+    paymentMethod: z.string().min(1, "Payment method is required"),
+    senderPhoneNumber: z
+      .string()
+      .min(1, "Sender phone number is required")
+      .regex(/^\+?[\d\s-()]{10,}$/, "Invalid phone number format"),
+
+    // Step 5: Security
+    password: z.string().min(1, "Password is required").min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
+
+type FormData = z.infer<typeof signupSchema>
 
 export default function SignupPage() {
   const [isVisible, setIsVisible] = useState(false)
@@ -38,25 +92,18 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    fatherName: "",
-    motherName: "",
-    occupation: "",
-    address: "",
-    nidNumber: "",
-    phoneNumber: "",
-    email: "",
-    amount: "",
-    monthlyDeposit: "",
-    referenceName: "",
-    paymentMethod: "",
-    senderPhoneNumber: "",
-    password: "",
-    confirmPassword: "",
+  const {
+    register,
+    handleSubmit,
+    control,
+    trigger,
+    formState: { errors },
+    reset,
+    getValues,
+  } = useForm<FormData>({
+    resolver: zodResolver(signupSchema),
+    mode: "onChange",
   })
-
-  const [errors, setErrors] = useState<FormErrors>({})
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,65 +112,32 @@ export default function SignupPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const validateStep = (step: number): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (step === 1) {
-      if (!formData.name.trim()) newErrors.name = "Name is required"
-      if (!formData.fatherName.trim()) newErrors.fatherName = "Father's name is required"
-      if (!formData.motherName.trim()) newErrors.motherName = "Mother's name is required"
-      if (!formData.occupation.trim()) newErrors.occupation = "Occupation is required"
-    }
-
-    if (step === 2) {
-      if (!formData.address.trim()) newErrors.address = "Address is required"
-      if (!formData.nidNumber.trim()) newErrors.nidNumber = "NID number is required"
-      else if (!/^\d{10,17}$/.test(formData.nidNumber.replace(/\s/g, ''))) newErrors.nidNumber = "Invalid NID number format"
-      
-      if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required"
-      else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phoneNumber)) newErrors.phoneNumber = "Invalid phone number"
-    }
-
-    if (step === 3) {
-      if (!formData.email.trim()) newErrors.email = "Email is required"
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email address"
-
-      if (!formData.amount.trim()) newErrors.amount = "Registration fee is required"
-      else if (isNaN(Number(formData.amount)) || Number(formData.amount) < 0) newErrors.amount = "Invalid amount"
-
-      if (!formData.monthlyDeposit.trim()) newErrors.monthlyDeposit = "Monthly deposit is required"
-      else if (isNaN(Number(formData.monthlyDeposit)) || Number(formData.monthlyDeposit) < 0)
-        newErrors.monthlyDeposit = "Invalid amount"
-    }
-
-    if (step === 4) {
-      if (!formData.referenceName.trim()) newErrors.referenceName = "Reference name is required"
-      if (!formData.paymentMethod.trim()) newErrors.paymentMethod = "Payment method is required"
-      if (!formData.senderPhoneNumber.trim()) newErrors.senderPhoneNumber = "Sender phone number is required"
-      else if (!/^\+?[\d\s-()]{10,}$/.test(formData.senderPhoneNumber)) newErrors.senderPhoneNumber = "Invalid phone number"
-    }
-
-    if (step === 5) {
-      if (!formData.password.trim()) newErrors.password = "Password is required"
-      else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters"
-
-      if (!formData.confirmPassword.trim()) newErrors.confirmPassword = "Please confirm password"
-      else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords don't match"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+  const getStepFields = (step: number): (keyof FormData)[] => {
+    switch (step) {
+      case 1:
+        return ["name", "fatherName", "motherName", "occupation"]
+      case 2:
+        return ["email", "nidNumber", "phoneNumber", "address"]
+      case 3:
+        return ["amount", "monthlyDeposit", "joiningDate"]
+      case 4:
+        return ["referenceName", "paymentMethod", "senderPhoneNumber"]
+      case 5:
+        return ["password", "confirmPassword"]
+      default:
+        return []
     }
   }
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
+  const validateStep = async (step: number): Promise<boolean> => {
+    const fields = getStepFields(step)
+    const result = await trigger(fields)
+    return result
+  }
+
+  const handleNext = async () => {
+    const isValid = await validateStep(currentStep)
+    if (isValid) {
       setCurrentStep((prev) => prev + 1)
     }
   }
@@ -132,39 +146,27 @@ export default function SignupPage() {
     setCurrentStep((prev) => prev - 1)
   }
 
-  const handleSubmit = async () => {
-    if (!validateStep(5)) return
-
+  const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      // Simulate API call
+      console.log("Form Data:", data)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    setIsSubmitting(false)
-    setIsSuccess(true)
+      setIsSubmitting(false)
+      setIsSuccess(true)
 
-    // Reset form after success
-    setTimeout(() => {
-      setIsSuccess(false)
-      setCurrentStep(1)
-      setFormData({
-        name: "",
-        fatherName: "",
-        motherName: "",
-        occupation: "",
-        address: "",
-        nidNumber: "",
-        phoneNumber: "",
-        email: "",
-        amount: "",
-        monthlyDeposit: "",
-        referenceName: "",
-        paymentMethod: "",
-        senderPhoneNumber: "",
-        password: "",
-        confirmPassword: "",
-      })
-    }, 3000)
+      // Reset form after success
+      setTimeout(() => {
+        setIsSuccess(false)
+        setCurrentStep(1)
+        reset()
+      }, 3000)
+    } catch (error) {
+      setIsSubmitting(false)
+      console.error("Submission error:", error)
+    }
   }
 
   const renderStep1 = () => (
@@ -182,13 +184,14 @@ export default function SignupPage() {
           <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
+            {...register("name")}
             placeholder="Enter your full name"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.name ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.name ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
+        {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -199,13 +202,14 @@ export default function SignupPage() {
           <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             id="fatherName"
-            value={formData.fatherName}
-            onChange={(e) => handleInputChange("fatherName", e.target.value)}
+            {...register("fatherName")}
             placeholder="Enter father's name"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.fatherName ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.fatherName ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.fatherName && <p className="text-red-500 text-xs">{errors.fatherName}</p>}
+        {errors.fatherName && <p className="text-red-500 text-xs">{errors.fatherName.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -216,13 +220,14 @@ export default function SignupPage() {
           <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             id="motherName"
-            value={formData.motherName}
-            onChange={(e) => handleInputChange("motherName", e.target.value)}
+            {...register("motherName")}
             placeholder="Enter mother's name"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.motherName ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.motherName ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.motherName && <p className="text-red-500 text-xs">{errors.motherName}</p>}
+        {errors.motherName && <p className="text-red-500 text-xs">{errors.motherName.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -233,13 +238,14 @@ export default function SignupPage() {
           <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             id="occupation"
-            value={formData.occupation}
-            onChange={(e) => handleInputChange("occupation", e.target.value)}
+            {...register("occupation")}
             placeholder="Enter your occupation"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.occupation ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.occupation ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.occupation && <p className="text-red-500 text-xs">{errors.occupation}</p>}
+        {errors.occupation && <p className="text-red-500 text-xs">{errors.occupation.message}</p>}
       </div>
     </div>
   )
@@ -251,7 +257,6 @@ export default function SignupPage() {
         <p className="text-gray-600 text-sm">Your address and contact information</p>
       </div>
 
-      {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm font-medium text-gray-700">
           Email Address
@@ -261,16 +266,16 @@ export default function SignupPage() {
           <Input
             id="email"
             type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
+            {...register("email")}
             placeholder="Enter your email"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.email ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.email ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
       </div>
 
-      {/* Nid  */}
       <div className="space-y-2">
         <Label htmlFor="nidNumber" className="text-sm font-medium text-gray-700">
           NID Number
@@ -279,16 +284,16 @@ export default function SignupPage() {
           <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             id="nidNumber"
-            value={formData.nidNumber}
-            onChange={(e) => handleInputChange("nidNumber", e.target.value)}
+            {...register("nidNumber")}
             placeholder="Enter your NID number"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.nidNumber ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.nidNumber ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.nidNumber && <p className="text-red-500 text-xs">{errors.nidNumber}</p>}
+        {errors.nidNumber && <p className="text-red-500 text-xs">{errors.nidNumber.message}</p>}
       </div>
 
-      {/*Phone Number  */}
       <div className="space-y-2">
         <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
           Personal Phone Number
@@ -298,16 +303,16 @@ export default function SignupPage() {
           <Input
             id="phoneNumber"
             type="tel"
-            value={formData.phoneNumber}
-            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+            {...register("phoneNumber")}
             placeholder="Enter your phone number"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.phoneNumber ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.phoneNumber ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber}</p>}
+        {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}
       </div>
 
-      {/* Address */}
       <div className="space-y-2">
         <Label htmlFor="address" className="text-sm font-medium text-gray-700">
           Address
@@ -316,21 +321,15 @@ export default function SignupPage() {
           <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Textarea
             id="address"
-            value={formData.address}
-            onChange={(e) => handleInputChange("address", e.target.value)}
+            {...register("address")}
             placeholder="Enter your complete address"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl resize-none h-20 ${errors.address ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl resize-none h-20 ${
+              errors.address ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.address && <p className="text-red-500 text-xs">{errors.address}</p>}
+        {errors.address && <p className="text-red-500 text-xs">{errors.address.message}</p>}
       </div>
-
-
-      {/* <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
-        <p className="text-xs text-gray-600">
-          Please ensure your NID number is correct as it will be used for verification purposes.
-        </p>
-      </div> */}
     </div>
   )
 
@@ -350,13 +349,14 @@ export default function SignupPage() {
           <Input
             id="amount"
             type="number"
-            value={formData.amount}
-            onChange={(e) => handleInputChange("amount", e.target.value)}
+            {...register("amount")}
             placeholder="Enter registration fee amount"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.amount ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.amount ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.amount && <p className="text-red-500 text-xs">{errors.amount}</p>}
+        {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -368,13 +368,49 @@ export default function SignupPage() {
           <Input
             id="monthlyDeposit"
             type="number"
-            value={formData.monthlyDeposit}
-            onChange={(e) => handleInputChange("monthlyDeposit", e.target.value)}
+            {...register("monthlyDeposit")}
             placeholder="Enter monthly deposit amount"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.monthlyDeposit ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.monthlyDeposit ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.monthlyDeposit && <p className="text-red-500 text-xs">{errors.monthlyDeposit}</p>}
+        {errors.monthlyDeposit && <p className="text-red-500 text-xs">{errors.monthlyDeposit.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="joiningDate" className="text-sm font-medium text-gray-700">
+          Joining Date
+        </Label>
+        <Controller
+          name="joiningDate"
+          control={control}
+          render={({ field }) => (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-full justify-start text-left font-normal pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+                    !field.value ? "text-muted-foreground" : ""
+                  } ${errors.joiningDate ? "border-red-400" : ""}`}
+                >
+                  <CalendarIcon className="h-4 w-4 text-gray-400" />
+                  {field.value ? format(field.value, "PPP") : <span>Pick your joining date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={field.value}
+                  onSelect={field.onChange}
+                  disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        />
+        {errors.joiningDate && <p className="text-red-500 text-xs">{errors.joiningDate.message}</p>}
       </div>
 
       <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
@@ -398,17 +434,27 @@ export default function SignupPage() {
         </Label>
         <div className="relative">
           <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Select value={formData.referenceName} onValueChange={(value) => handleInputChange("referenceName", value)}>
-            <SelectTrigger className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.referenceName ? "border-red-400" : ""}`}>
-              <SelectValue placeholder="Select reference name" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="arfan-shojib">Arfan Shojib</SelectItem>
-              <SelectItem value="xhamix-shovo">Xhamix Shovo</SelectItem>
-            </SelectContent>
-          </Select>
+          <Controller
+            name="referenceName"
+            control={control}
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger
+                  className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+                    errors.referenceName ? "border-red-400" : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select reference name" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="arfan-shojib">Arfan Shojib</SelectItem>
+                  <SelectItem value="xhamix-shovo">Xhamix Shovo</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
-        {errors.referenceName && <p className="text-red-500 text-xs">{errors.referenceName}</p>}
+        {errors.referenceName && <p className="text-red-500 text-xs">{errors.referenceName.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -417,19 +463,29 @@ export default function SignupPage() {
         </Label>
         <div className="relative">
           <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange("paymentMethod", value)}>
-            <SelectTrigger className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.paymentMethod ? "border-red-400" : ""}`}>
-              <SelectValue placeholder="Select payment method" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="bkash">bKash</SelectItem>
-              <SelectItem value="nagad">Nagad</SelectItem>
-              <SelectItem value="rocket">Rocket</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
-            </SelectContent>
-          </Select>
+          <Controller
+            name="paymentMethod"
+            control={control}
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger
+                  className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+                    errors.paymentMethod ? "border-red-400" : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bkash">bKash</SelectItem>
+                  <SelectItem value="nagad">Nagad</SelectItem>
+                  <SelectItem value="rocket">Rocket</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
-        {errors.paymentMethod && <p className="text-red-500 text-xs">{errors.paymentMethod}</p>}
+        {errors.paymentMethod && <p className="text-red-500 text-xs">{errors.paymentMethod.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -441,13 +497,14 @@ export default function SignupPage() {
           <Input
             id="senderPhoneNumber"
             type="tel"
-            value={formData.senderPhoneNumber}
-            onChange={(e) => handleInputChange("senderPhoneNumber", e.target.value)}
+            {...register("senderPhoneNumber")}
             placeholder="Phone number used for payment"
-            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.senderPhoneNumber ? "border-red-400" : ""}`}
+            className={`pl-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.senderPhoneNumber ? "border-red-400" : ""
+            }`}
           />
         </div>
-        {errors.senderPhoneNumber && <p className="text-red-500 text-xs">{errors.senderPhoneNumber}</p>}
+        {errors.senderPhoneNumber && <p className="text-red-500 text-xs">{errors.senderPhoneNumber.message}</p>}
       </div>
 
       <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
@@ -474,10 +531,11 @@ export default function SignupPage() {
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={(e) => handleInputChange("password", e.target.value)}
+            {...register("password")}
             placeholder="Create a strong password"
-            className={`pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.password ? "border-red-400" : ""}`}
+            className={`pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.password ? "border-red-400" : ""
+            }`}
           />
           <Button
             type="button"
@@ -489,7 +547,7 @@ export default function SignupPage() {
             {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
           </Button>
         </div>
-        {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+        {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -501,10 +559,11 @@ export default function SignupPage() {
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+            {...register("confirmPassword")}
             placeholder="Confirm your password"
-            className={`pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.confirmPassword ? "border-red-400" : ""}`}
+            className={`pl-10 pr-10 bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
+              errors.confirmPassword ? "border-red-400" : ""
+            }`}
           />
           <Button
             type="button"
@@ -520,7 +579,7 @@ export default function SignupPage() {
             )}
           </Button>
         </div>
-        {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword}</p>}
+        {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
       </div>
 
       <div className="bg-blue-50/50 rounded-xl p-3 mt-4">
@@ -570,8 +629,7 @@ export default function SignupPage() {
         >
           {/* Phone frame */}
           <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-6 relative overflow-hidden min-h-[calc(100vh-100px)]">
-            {/* Content */}
-            <div className="h-full flex flex-col">
+            <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
               {/* Header */}
               <div
                 className={`
@@ -580,6 +638,7 @@ export default function SignupPage() {
                 `}
               >
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   className="p-2 hover:bg-white/20 rounded-full transition-all duration-300"
@@ -634,6 +693,7 @@ export default function SignupPage() {
                 <div className="mt-6 space-y-1">
                   {currentStep < 5 ? (
                     <Button
+                      type="button"
                       onClick={handleNext}
                       className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
                     >
@@ -641,7 +701,7 @@ export default function SignupPage() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={handleSubmit}
+                      type="submit"
                       disabled={isSubmitting}
                       className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -651,13 +711,17 @@ export default function SignupPage() {
 
                   <div className="text-center">
                     <span className="text-sm text-gray-600">Already have an account? </span>
-                    <Button variant="link" className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium"
+                    >
                       Login
                     </Button>
                   </div>
                 </div>
               )}
-            </div>
+            </form>
 
             {/* Decorative elements */}
             <div className="absolute top-20 right-4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
@@ -675,7 +739,6 @@ export default function SignupPage() {
         >
           <User className="w-6 h-6 text-white" />
         </div>
-
       </div>
 
       {/* Bottom gradient overlay */}
