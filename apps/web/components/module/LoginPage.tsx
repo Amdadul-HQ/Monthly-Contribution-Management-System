@@ -3,12 +3,13 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { ArrowLeft, Eye, EyeOff, Hash, Lock, Mail, Phone } from "lucide-react"
+import { ArrowLeft, Check, Eye, EyeOff, Hash, Lock, Mail, Phone } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { login } from "@/service/authService"
+import { useRouter } from "next/navigation"
 
 // Define validation schemas for each login type
 const emailSchema = z.object({
@@ -32,6 +33,8 @@ export default function LoginPage() {
   const [isVisible, setIsVisible] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loginType, setLoginType] = useState<"email" | "phone" | "memberid">("email")
+  const [isSuccess, setIsSuccess] = useState(false)
+  const router = useRouter()
 
   // Get the appropriate schema based on login type
   const getSchema = () => {
@@ -100,7 +103,14 @@ export default function LoginPage() {
       console.log(credentials)
       if(credentials){
         const res = await login(credentials);
-        console.log(res)
+        if(res?.success) {
+        setIsSuccess(true)
+        // Reset form after success
+        setTimeout(() => {
+          reset()
+          router.push('/')
+        }, 3000)
+        }
       }
       // Simulate API call
       // alert(`Login successful with ${loginType}: ${data.login}`)
@@ -162,6 +172,23 @@ export default function LoginPage() {
     }
   }
 
+  const renderSuccess = () => (
+      <div className="text-center space-y-6 py-8">
+        <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
+          <Check className="h-8 w-8 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Successfully!</h2>
+          <p className="text-gray-600">Welcome to MoneyWise! Your has been successfully Login.</p>
+        </div>
+        <div className="bg-green-50/50 rounded-xl p-4">
+          <p className="text-sm text-green-700">
+            You can now start managing your finances with our smart banking solutions.
+          </p>
+        </div>
+      </div>
+    )
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-blue-100 to-blue-500 flex items-center justify-center overflow-hidden relative">
       {/* Animated background elements */}
@@ -186,6 +213,11 @@ export default function LoginPage() {
           <div className="bg-gradient-to-b from-blue-50 to-blue-200 rounded-[2.5rem] p-4 relative overflow-hidden min-h-[600px]">
             {/* Content */}
             <div className="pt-12 pb-8 md:space-y-6">
+              {
+                isSuccess ? renderSuccess() : <>
+                
+                {/* </>
+              } */}
               {/* Header */}
               <div
                 className={`
@@ -384,6 +416,8 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
+              </>
+              }
             </div>
 
             {/* Decorative elements */}
