@@ -24,7 +24,7 @@ model PersonalInfo {
   email               String
   phone               BigInt
   memberId            Int             @unique
-  nid                 BigInt             @unique
+  nid                 BigInt          @unique
   status              Status          @default(Pending)
   joiningDate         DateTime
   referenceName       String
