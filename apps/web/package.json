@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.1.1",
+    "@hookform/resolvers": "^2.9.11",
     "@workspace/ui": "workspace:*",
     "date-fns": "^4.1.0",
     "js-cookie": "^3.0.5",

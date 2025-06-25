@@ -51,7 +51,7 @@ import {
 import { useState } from "react"
 
 // Mock user request data - replace with your actual data
-const mockUserRequests = [
+const mockUserRequests : UserRequest[] = [
   {
     id: 1,
     name: "Shahidul Islam",

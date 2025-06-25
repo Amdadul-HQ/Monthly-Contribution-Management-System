@@ -8,8 +8,10 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { login } from "@/service/authService"
 import { useRouter } from "next/navigation"
+import { loginAction } from "@/app/actions/auth"
+import { useMemo } from "react"
+
 
 // Define validation schemas for each login type
 const emailSchema = z.object({
@@ -29,12 +31,25 @@ const memberIdSchema = z.object({
 
 type FormData = z.infer<typeof emailSchema>
 
-export default function LoginPage() {
+const LoginPage =() => {
   const [isVisible, setIsVisible] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loginType, setLoginType] = useState<"email" | "phone" | "memberid">("email")
   const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
+
+  const schema = useMemo(() => {
+  switch (loginType) {
+    case "email":
+      return emailSchema
+    case "phone":
+      return phoneSchema
+    case "memberid":
+      return memberIdSchema
+    default:
+      return emailSchema
+  }
+}, [loginType])
 
   // Get the appropriate schema based on login type
   const getSchema = () => {
@@ -56,10 +71,10 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
     reset,
     clearErrors,
-  } = useForm<FormData>({
-    resolver: zodResolver(getSchema()),
-    mode: "onChange",
-  })
+  } = useForm<z.infer<typeof schema>>({
+  resolver: zodResolver(schema),
+  mode: "onChange",
+})
 
   // Reset form when login type changes
   useEffect(() => {
@@ -75,50 +90,27 @@ export default function LoginPage() {
   }, [])
 
   const onSubmit = async (data: FormData) => {
-    try {
-      let credentials;
-      console.log("Form submitted:", { ...data, loginType })
-      
-      if(loginType=="email"){
-        credentials = {
-          email:data.login,
-          password:data.password
-        }
-      }
+  try {
+    const res = await loginAction({
+      loginType,
+      login: data.login,
+      password: data.password,
+    });
 
-      if(loginType == "phone"){
-        credentials = {
-          phone:parseFloat(data.login),
-          password:data.password
-        }
-      }
-
-      if(loginType == "memberid"){
-        credentials = {
-          memberId:parseFloat(data.login),
-          password:data.password
-        }
-      }
-
-      console.log(credentials)
-      if(credentials){
-        const res = await login(credentials);
-        if(res?.success) {
-        setIsSuccess(true)
-        // Reset form after success
-        setTimeout(() => {
-          reset()
-          router.push('/')
-        }, 3000)
-        }
-      }
-      // Simulate API call
-      // alert(`Login successful with ${loginType}: ${data.login}`)
-    } catch (error) {
-      console.error("Login failed:", error)
-      alert("Login failed. Please try again.")
+    if (res?.success) {
+      setIsSuccess(true);
+      setTimeout(() => {
+        reset();
+        // router.push('/');
+      }, 3000);
+    } else {
+      alert(res.message || "Login failed.");
     }
+  } catch (error) {
+    console.error("Login failed:", error);
+    alert("Login failed. Please try again.");
   }
+};
 
   const getInputType = () => {
     switch (loginType) {
@@ -467,3 +459,6 @@ export default function LoginPage() {
     </div>
   )
 }
+
+
+export default LoginPage

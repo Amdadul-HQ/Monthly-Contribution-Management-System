@@ -452,7 +452,7 @@ export function AdminOverviewPage() {
                   <ChartTooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
-                        const data = payload[0].payload
+                        const data = payload[0]?.payload
                         return (
                           <div className="bg-white/90 backdrop-blur-sm border border-blue-200 rounded-lg p-3 shadow-lg">
                             <p className="font-medium">{data.name}</p>

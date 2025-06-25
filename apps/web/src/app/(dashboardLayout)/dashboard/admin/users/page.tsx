@@ -1,4 +1,5 @@
-import { AdminUserManagement } from '@/components/module/admin/AdminUserManagement'
+import { AdminUserManagement } from "@/components/module/admin/AdminUserManagement"
+
 
 const UserManagement = () => {
   return <AdminUserManagement/>

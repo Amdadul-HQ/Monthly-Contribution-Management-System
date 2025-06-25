@@ -48,7 +48,7 @@ import {
 import { useState } from "react"
 
 // Mock user data - replace with your actual data
-const mockUsers = [
+const mockUsers : User[] = [
   {
     id: 1,
     name: "Mohammad Rahman",
@@ -226,6 +226,7 @@ const accountTypeOptions = ["All", "Premium", "Standard", "Basic"]
 
 type UserStatus = "Active" | "Suspended" | "Blocked" | "Inactive"
 type ActionType = "block" | "suspend" | "activate" | "remove"
+// type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING"
 
 interface User {
   id: number

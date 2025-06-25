@@ -117,6 +117,9 @@ export function DepositForm() {
   useEffect(() => {
     if (watchedProofImage && watchedProofImage.length > 0) {
       const file = watchedProofImage[0]
+      if(!file){
+        return
+      }
       const previewUrl = URL.createObjectURL(file)
       setImagePreview(previewUrl)
 

@@ -30,7 +30,6 @@ import { format } from "date-fns"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { signUpMember } from "@/service/authService"
 import { useRouter } from 'next/navigation'
 
 const signupSchema = z
@@ -86,7 +85,7 @@ const signupSchema = z
 
 type FormData = z.infer<typeof signupSchema>
 
-export default function SignupPage() {
+const SignupPage =() => {
   const [isVisible, setIsVisible] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -166,18 +165,18 @@ export default function SignupPage() {
     };
     console.log(formattedData); // Log the formatted data
     // Simulate API call
-    const res = await signUpMember(formattedData);
-    if(res?.success) {
-      setIsSuccess(true)
-      // Reset form after success
-      setTimeout(() => {
-        setIsSuccess(false)
-        setCurrentStep(1)
-        reset()
-        router.push('/')
-      }, 3000)
-    }
-      console.log(res)
+    // const res = await signUpMember(formattedData);
+    // if(res?.success) {
+    //   setIsSuccess(true)
+    //   // Reset form after success
+    //   setTimeout(() => {
+    //     setIsSuccess(false)
+    //     setCurrentStep(1)
+    //     reset()
+    //     router.push('/')
+    //   }, 3000)
+    // }
+    //   console.log(res)
 
       setIsSubmitting(false)
 
@@ -764,3 +763,5 @@ export default function SignupPage() {
     </div>
   )
 }
+
+export default SignupPage

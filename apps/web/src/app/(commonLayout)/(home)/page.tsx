@@ -1,4 +1,5 @@
-import LadingPage from "@/components/module/LadingPage"
+import LadingPage from "@/pages/LadingPage"
+
 
 const page = () => {
   return <LadingPage/>
