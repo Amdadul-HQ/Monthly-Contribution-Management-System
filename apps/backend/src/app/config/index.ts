@@ -30,7 +30,7 @@ export default {
     //     sslValidationApi:process.env.SSL_VALIDATION_API,
     //     sslverifyUrl:process.env.SSL_PAYMENT_VERIFY_URL
     // },
-//   email_pass: process.env.EMAIL_PASS!,
-//   email_user: process.env.EMAIL_USER!,
-//   owner_email: process.env.OWNER_EMAIL,
+  email_pass: process.env.EMAIL_PASS!,
+  email_user: process.env.EMAIL_USER!,
+  owner_email: process.env.OWNER_EMAIL,
 };
