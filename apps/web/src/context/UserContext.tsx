@@ -1,5 +1,4 @@
-import { IUser } from "@/commonTypes/commonTypes";
-import { getCurrentUser } from "@/service/AuthService";
+import { IUser } from "@/types/commonTypes/commonTypes";
 import {
   createContext,
   Dispatch,
@@ -22,19 +21,19 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleUser = async () => {
-    try {
-      const user = await getCurrentUser();
-      setUser(user as IUser);
-      setIsLoading(false);
-    } catch {
-      setIsLoading(false);
-    }
-  };
+  // const handleUser = async () => {
+  //   try {
+  //     const user = await getCurrentUser();
+  //     setUser(user as IUser);
+  //     setIsLoading(false);
+  //   } catch {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    handleUser();
-  }, [isLoading]);
+  // useEffect(() => {
+  //   handleUser();
+  // }, [isLoading]);
 
   return (
     <UserContext.Provider value={{ user, setUser, isLoading, setIsLoading }}>
