@@ -76,7 +76,7 @@ export default function LadingPage() {
                 <Link href='/login'>
                   <Button
                     className="
-                      w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 
+                      w-full h-12 cursor-pointer bg-gradient-to-r from-blue-600 to-cyan-500 
                       hover:from-blue-700 hover:to-cyan-600 text-white font-medium 
                       rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
                       transform hover:scale-105 active:scale-95
@@ -91,7 +91,7 @@ export default function LadingPage() {
                   <Button
                   variant="outline"
                   className="
-                    w-full h-12 bg-white/50 hover:bg-white/70 text-gray-700 
+                    w-full h-12 cursor-pointer bg-white/50 hover:bg-white/70 text-gray-700 
                     font-medium rounded-full border-2 border-white/30 
                     hover:border-white/50 shadow-md hover:shadow-lg 
                     transition-all duration-300 transform hover:scale-105 active:scale-95
