@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { ArrowLeft, Check, Eye, EyeOff, Hash, Lock, Mail, Phone } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -15,6 +15,7 @@ import { useDispatch } from "react-redux"
 import { setUser } from "@/redux/userSlice/userSlice"
 import { toast } from "sonner"
 import Link from "next/link"
+import Cookies from "js-cookie"
 
 
 // Define validation schemas for each login type
@@ -82,18 +83,56 @@ const LoginPage =() => {
   mode: "onChange",
 })
 
+  // Error handler for runtime errors
+  const handleError = useCallback((error: unknown, context: string) => {
+    console.error(`Error in ${context}:`, error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : typeof error === 'string' 
+        ? error 
+        : 'An unexpected error occurred';
+    toast.error(`${context}: ${errorMessage}`);
+  }, []);
+
   // Reset form when login type changes
   useEffect(() => {
-    reset()
-    clearErrors()
-  }, [loginType, reset, clearErrors])
+    try {
+      reset()
+      clearErrors()
+    } catch (error) {
+      handleError(error, 'Form reset');
+    }
+  }, [loginType, reset, clearErrors, handleError])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [])
+    try {
+      const timer = setTimeout(() => {
+        setIsVisible(true)
+      }, 300)
+      return () => clearTimeout(timer)
+    } catch (error) {
+      handleError(error, 'Animation setup');
+    }
+  }, [handleError])
+
+  // Global error handler for unhandled errors
+  useEffect(() => {
+    const handleUnhandledError = (event: ErrorEvent) => {
+      handleError(event.error || event.message, 'Runtime error');
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      handleError(event.reason, 'Unhandled promise rejection');
+    };
+
+    window.addEventListener('error', handleUnhandledError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleUnhandledError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, [handleError])
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -104,20 +143,50 @@ const LoginPage =() => {
       }).unwrap();
 
       if (result?.success && result?.data) {
+        const { token, refreshToken, user } = result.data;
+        
         // Store user and tokens in Redux
         dispatch(setUser({
-          user: result.data.user,
-          token: result.data.token,
-          refreshToken: result.data.refreshToken,
+          user,
+          token,
+          refreshToken,
         }));
+
+        // Set cookies for middleware to read
+        try {
+          Cookies.set("accessToken", token, {
+            expires: 7, // 7 days
+            path: "/",
+            sameSite: "lax",
+          });
+
+          if (refreshToken) {
+            Cookies.set("refreshToken", refreshToken, {
+              expires: 30, // 30 days
+              path: "/",
+              sameSite: "lax",
+            });
+          }
+        } catch (cookieError) {
+          handleError(cookieError, 'Cookie setting');
+          // Continue even if cookie setting fails
+        }
 
         setIsSuccess(true);
         toast.success(result.message || "Login successful!");
         
-        setTimeout(() => {
-          reset();
-          router.push('/dashboard');
-        }, 2000);
+        try {
+          setTimeout(() => {
+            try {
+              reset();
+              router.push('/dashboard');
+            } catch (navError) {
+              handleError(navError, 'Navigation');
+            }
+          }, 2000);
+        } catch (timeoutError) {
+          handleError(timeoutError, 'Timeout setup');
+        }
       } else {
         toast.error(result?.message || "Login failed.");
       }

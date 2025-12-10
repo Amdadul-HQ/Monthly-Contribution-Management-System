@@ -23,7 +23,7 @@ import {
   Hash,
   CalendarIcon,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Calendar } from "@workspace/ui/components/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover"
 import { format } from "date-fns"
@@ -35,6 +35,7 @@ import { useRegisterMutation } from "@/redux/api/auth/authApi"
 import { useDispatch } from "react-redux"
 import { setUser } from "@/redux/userSlice/userSlice"
 import { toast } from "sonner"
+import Cookies from "js-cookie"
 import Link from "next/link"
 
 const signupSchema = z
@@ -114,12 +115,46 @@ const SignupPage =() => {
     mode: "onChange",
   })
 
+  // Error handler for runtime errors
+  const handleError = useCallback((error: unknown, context: string) => {
+    console.error(`Error in ${context}:`, error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : typeof error === 'string' 
+        ? error 
+        : 'An unexpected error occurred';
+    toast.error(`${context}: ${errorMessage}`);
+  }, []);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [])
+    try {
+      const timer = setTimeout(() => {
+        setIsVisible(true)
+      }, 300)
+      return () => clearTimeout(timer)
+    } catch (error) {
+      handleError(error, 'Animation setup');
+    }
+  }, [handleError])
+
+  // Global error handler for unhandled errors
+  useEffect(() => {
+    const handleUnhandledError = (event: ErrorEvent) => {
+      handleError(event.error || event.message, 'Runtime error');
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      handleError(event.reason, 'Unhandled promise rejection');
+    };
+
+    window.addEventListener('error', handleUnhandledError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleUnhandledError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, [handleError])
 
   const getStepFields = (step: number): (keyof FormData)[] => {
     switch (step) {
@@ -139,20 +174,33 @@ const SignupPage =() => {
   }
 
   const validateStep = async (step: number): Promise<boolean> => {
-    const fields = getStepFields(step)
-    const result = await trigger(fields)
-    return result
+    try {
+      const fields = getStepFields(step)
+      const result = await trigger(fields)
+      return result
+    } catch (error) {
+      handleError(error, 'Form validation');
+      return false;
+    }
   }
 
   const handleNext = async () => {
-    const isValid = await validateStep(currentStep)
-    if (isValid) {
-      setCurrentStep((prev) => prev + 1)
+    try {
+      const isValid = await validateStep(currentStep)
+      if (isValid) {
+        setCurrentStep((prev) => prev + 1)
+      }
+    } catch (error) {
+      handleError(error, 'Step navigation');
     }
   }
 
   const handleBack = () => {
-    setCurrentStep((prev) => prev - 1)
+    try {
+      setCurrentStep((prev) => prev - 1)
+    } catch (error) {
+      handleError(error, 'Step navigation');
+    }
   }
 
   const onSubmit = async (data: FormData) => {
@@ -179,23 +227,53 @@ const SignupPage =() => {
       const result = await registerUser(formattedData).unwrap();
 
       if (result?.success && result?.data) {
+        const { token, refreshToken, user } = result.data;
+        
         // Store user and tokens in Redux
         dispatch(setUser({
-          user: result.data.user,
-          token: result.data.token,
-          refreshToken: result.data.refreshToken,
+          user,
+          token,
+          refreshToken,
         }));
+
+        // Set cookies for middleware to read
+        try {
+          Cookies.set("accessToken", token, {
+            expires: 7, // 7 days
+            path: "/",
+            sameSite: "lax",
+          });
+
+          if (refreshToken) {
+            Cookies.set("refreshToken", refreshToken, {
+              expires: 30, // 30 days
+              path: "/",
+              sameSite: "lax",
+            });
+          }
+        } catch (cookieError) {
+          handleError(cookieError, 'Cookie setting');
+          // Continue even if cookie setting fails
+        }
 
         setIsSuccess(true);
         toast.success(result.message || "Account created successfully!");
         
         // Reset form after success
-        setTimeout(() => {
-          setIsSuccess(false);
-          setCurrentStep(1);
-          reset();
-          router.push('/dashboard');
-        }, 3000);
+        try {
+          setTimeout(() => {
+            try {
+              setIsSuccess(false);
+              setCurrentStep(1);
+              reset();
+              router.push('/dashboard');
+            } catch (navError) {
+              handleError(navError, 'Navigation');
+            }
+          }, 3000);
+        } catch (timeoutError) {
+          handleError(timeoutError, 'Timeout setup');
+        }
       } else {
         toast.error(result?.message || "Registration failed.");
       }
