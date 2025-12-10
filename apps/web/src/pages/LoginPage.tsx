@@ -230,6 +230,7 @@ const LoginPage =() => {
                   ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}
                 `}
               >
+                <Link href="/">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -237,6 +238,7 @@ const LoginPage =() => {
                 >
                   <ArrowLeft className="h-5 w-5 text-gray-700" />
                 </Button>
+                </Link>
                 <h1 className="text-xl font-semibold text-gray-900">Login</h1>
                 <div className="w-9"></div> {/* Spacer */}
               </div>
