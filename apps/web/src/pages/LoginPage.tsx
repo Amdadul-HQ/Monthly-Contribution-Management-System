@@ -9,8 +9,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
-import { loginAction } from "@/app/actions/auth"
 import { useMemo } from "react"
+import { useLoginMutation } from "@/redux/api/auth/authApi"
+import { useDispatch } from "react-redux"
+import { setUser } from "@/redux/userSlice/userSlice"
+import { toast } from "sonner"
+import Link from "next/link"
 
 
 // Define validation schemas for each login type
@@ -37,6 +41,8 @@ const LoginPage =() => {
   const [loginType, setLoginType] = useState<"email" | "phone" | "memberid">("email")
   const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
+  const dispatch = useDispatch()
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation()
 
   const schema = useMemo(() => {
   switch (loginType) {
@@ -90,27 +96,36 @@ const LoginPage =() => {
   }, [])
 
   const onSubmit = async (data: FormData) => {
-  try {
-    const res = await loginAction({
-      loginType,
-      login: data.login,
-      password: data.password,
-    });
+    try {
+      const result = await login({
+        loginType,
+        login: data.login,
+        password: data.password,
+      }).unwrap();
 
-    if (res?.success) {
-      setIsSuccess(true);
-      setTimeout(() => {
-        reset();
-        // router.push('/');
-      }, 3000);
-    } else {
-      alert(res.message || "Login failed.");
+      if (result?.success && result?.data) {
+        // Store user and tokens in Redux
+        dispatch(setUser({
+          user: result.data.user,
+          token: result.data.token,
+          refreshToken: result.data.refreshToken,
+        }));
+
+        setIsSuccess(true);
+        toast.success(result.message || "Login successful!");
+        
+        setTimeout(() => {
+          reset();
+          router.push('/dashboard');
+        }, 2000);
+      } else {
+        toast.error(result?.message || "Login failed.");
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      toast.error(error?.data?.message || error?.message || "Login failed. Please try again.");
     }
-  } catch (error) {
-    console.error("Login failed:", error);
-    alert("Login failed. Please try again.");
-  }
-};
+  };
 
   const getInputType = () => {
     switch (loginType) {
@@ -372,7 +387,7 @@ const LoginPage =() => {
                 {/* Login button */}
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoggingIn}
                   className="
                     w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 
                     hover:from-blue-700 hover:to-cyan-600 text-white font-medium 
@@ -381,7 +396,7 @@ const LoginPage =() => {
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                   "
                 >
-                  {isSubmitting ? "Signing in..." : "Login"}
+                  {(isSubmitting || isLoggingIn) ? "Signing in..." : "Login"}
                 </Button>
 
                 {/* Divider */}
@@ -397,13 +412,15 @@ const LoginPage =() => {
                 {/* Sign up link */}
                 <div className="text-center">
                   <span className="text-sm text-gray-600">{"Don't have an account? "}</span>
+                  <Link href="/signup">
                   <Button
-                    type="button"
-                    variant="link"
-                    className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium"
-                  >
-                    Sign up
-                  </Button>
+                      type="button"
+                      variant="link"
+                      className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto font-medium"
+                    >
+                      Sign up
+                    </Button>
+                  </Link>
                 </div>
               </form>
               </>

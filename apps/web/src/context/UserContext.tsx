@@ -4,8 +4,12 @@ import {
   Dispatch,
   SetStateAction,
   useContext,
-  useState,
+  useEffect,
 } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+import { useGetCurrentUserQuery } from "@/redux/api/auth/authApi";
+import { setUser, logOut } from "@/redux/userSlice/userSlice";
 
 interface IUserProviderValues {
   user: IUser | null;
@@ -17,25 +21,52 @@ interface IUserProviderValues {
 const UserContext = createContext<IUserProviderValues | undefined>(undefined);
 
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
+  const reduxUser = useSelector((state: RootState) => state.auth.user);
+  
+  // Fetch current user if token exists
+  const { data: userData, isLoading: isFetchingUser, error } = useGetCurrentUserQuery(
+    undefined,
+    {
+      skip: !token, // Skip if no token
+      refetchOnMountOrArgChange: true,
+    }
+  );
 
-  // const handleUser = async () => {
-  //   try {
-  //     const user = await getCurrentUser();
-  //     setUser(user as IUser);
-  //     setIsLoading(false);
-  //   } catch {
-  //     setIsLoading(false);
-  //   }
-  // };
+  // Update Redux store when user data is fetched
+  useEffect(() => {
+    if (userData?.success && userData?.data && token) {
+      dispatch(setUser({
+        user: userData.data as any,
+        token,
+        refreshToken: (reduxUser as any)?.refreshToken || null,
+      }));
+    } else if (error && token) {
+      // If there's an error and we have a token, user might be invalid
+      // Don't logout here, let the baseApi handle 401 errors
+      console.error("Failed to fetch user:", error);
+    }
+  }, [userData, error, token, dispatch, reduxUser]);
 
-  // useEffect(() => {
-  //   handleUser();
-  // }, [isLoading]);
+  // Sync context user with Redux user
+  const user = reduxUser as IUser | null;
+  const isLoading = isFetchingUser;
+
+  const handleSetUser = (newUser: IUser | null) => {
+    if (newUser) {
+      dispatch(setUser({
+        user: newUser as any,
+        token,
+        refreshToken: (reduxUser as any)?.refreshToken || null,
+      }));
+    } else {
+      dispatch(logOut());
+    }
+  };
 
   return (
-    <UserContext.Provider value={{ user, setUser, isLoading, setIsLoading }}>
+    <UserContext.Provider value={{ user, setUser: handleSetUser, isLoading, setIsLoading: () => {} }}>
       {children}
     </UserContext.Provider>
   );

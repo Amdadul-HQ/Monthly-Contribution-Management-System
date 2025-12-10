@@ -1,0 +1,26 @@
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.spinReverse {
+  animation: spin-reverse 1.5s linear infinite;
+}
+
+.progress {
+  animation: progress 1.5s ease-in-out infinite;
+}
+

@@ -11,10 +11,12 @@ type TUsers = {
 type TAuthSlice = {
   user: null | TUsers;
   token: null | string;
+  refreshToken: null | string;
 };
 const initialState: TAuthSlice = {
   user: null,
   token: null,
+  refreshToken: null,
 };
 
 const authSlice = createSlice({
@@ -23,13 +25,17 @@ const authSlice = createSlice({
 
   reducers: {
     setUser: (state, action) => {
-      const { token, user } = action.payload;
+      const { token, user, refreshToken } = action.payload;
       state.user = user;
       state.token = token;
+      if (refreshToken !== undefined) {
+        state.refreshToken = refreshToken;
+      }
     },
     logOut: (state) => {
       state.token = null; 
       state.user = null;
+      state.refreshToken = null;
     },
   },
 });

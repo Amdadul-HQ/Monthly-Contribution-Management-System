@@ -31,6 +31,11 @@ import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from 'next/navigation'
+import { useRegisterMutation } from "@/redux/api/auth/authApi"
+import { useDispatch } from "react-redux"
+import { setUser } from "@/redux/userSlice/userSlice"
+import { toast } from "sonner"
+import Link from "next/link"
 
 const signupSchema = z
   .object({
@@ -92,7 +97,9 @@ const SignupPage =() => {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-   const router = useRouter()
+  const router = useRouter()
+  const dispatch = useDispatch()
+  const [registerUser, { isLoading: isRegistering }] = useRegisterMutation()
 
   const {
     register,
@@ -152,37 +159,51 @@ const SignupPage =() => {
     setIsSubmitting(true)
 
     try {
-      console.log(data)
-        // Convert fields to appropriate types
-    const formattedData = {
-      ...data,
-      registrationFee: parseFloat(data.registrationFee), // Convert to number
-      monthlyDeposit: parseFloat(data.monthlyDeposit), // Convert to number
-      phone:parseFloat(data.phone),
-      senderPhoneNumber:parseFloat(data.senderPhoneNumber),
-      nid:parseFloat(data.nid),
-      joiningDate: data.joiningDate.toISOString(), // Convert to ISO string if needed
-    };
-    console.log(formattedData); // Log the formatted data
-    // Simulate API call
-    // const res = await signUpMember(formattedData);
-    // if(res?.success) {
-    //   setIsSuccess(true)
-    //   // Reset form after success
-    //   setTimeout(() => {
-    //     setIsSuccess(false)
-    //     setCurrentStep(1)
-    //     reset()
-    //     router.push('/')
-    //   }, 3000)
-    // }
-    //   console.log(res)
+      // Format data according to backend RegisterUserDto
+      const formattedData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        fatherName: data.fatherName,
+        motherName: data.motherName,
+        address: data.address,
+        occupation: data.occupation,
+        nid: data.nid,
+        registrationFee: data.registrationFee ? parseFloat(data.registrationFee) : undefined,
+        referencePerson: data.referenceName,
+        referencePhone: data.senderPhoneNumber,
+        joiningDate: data.joiningDate ? data.joiningDate.toISOString() : undefined,
+      };
 
-      setIsSubmitting(false)
+      const result = await registerUser(formattedData).unwrap();
 
-    } catch (error) {
-      setIsSubmitting(false)
-      console.error("Submission error:", error)
+      if (result?.success && result?.data) {
+        // Store user and tokens in Redux
+        dispatch(setUser({
+          user: result.data.user,
+          token: result.data.token,
+          refreshToken: result.data.refreshToken,
+        }));
+
+        setIsSuccess(true);
+        toast.success(result.message || "Account created successfully!");
+        
+        // Reset form after success
+        setTimeout(() => {
+          setIsSuccess(false);
+          setCurrentStep(1);
+          reset();
+          router.push('/dashboard');
+        }, 3000);
+      } else {
+        toast.error(result?.message || "Registration failed.");
+      }
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      toast.error(error?.data?.message || error?.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -719,15 +740,16 @@ const SignupPage =() => {
                   ) : (
                     <Button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isRegistering}
                       className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Creating Account..." : "Create Account"}
+                      {(isSubmitting || isRegistering) ? "Creating Account..." : "Create Account"}
                     </Button>
                   )}
 
                   <div className="text-center">
                     <span className="text-sm text-gray-600">Already have an account? </span>
+                    <Link href="/login">
                     <Button
                       type="button"
                       variant="link"
@@ -735,6 +757,7 @@ const SignupPage =() => {
                     >
                       Login
                     </Button>
+                    </Link>
                   </div>
                 </div>
               )}
