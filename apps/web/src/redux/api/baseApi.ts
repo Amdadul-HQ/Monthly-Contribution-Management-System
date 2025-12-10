@@ -5,18 +5,18 @@ import { logOut, setUser } from "../userSlice/userSlice";
 import { toast } from "sonner";
 import { TResponse } from "../type/apiType";
 
-const baseQuery = fetchBaseQuery(
-    {
-    baseUrl:process.env.NEXT_PUBLIC_API_URL,
-    credentials:'include',
-    prepareHeaders:(headers,{getState})=>{
-        const token = (getState() as RootState)?.auth?.token;
-        if(token){
-            headers.set("authorization",`bearer ${token}`);
-        }
-        return headers;
+const baseQuery = fetchBaseQuery({
+  // Fallback to local API if env is missing
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/ts",
+  credentials: "include",
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as RootState)?.auth?.token;
+    if (token) {
+      headers.set("authorization", `bearer ${token}`);
     }
-})
+    return headers;
+  },
+});
 
 const baseQueryWithRefreshToken : BaseQueryFn<FetchArgs,BaseQueryApi,DefinitionType> = async (args,api, extraOption) :Promise<any> =>{
     let result = await baseQuery(args,api,extraOption) as TResponse<object>;
@@ -36,7 +36,7 @@ const baseQueryWithRefreshToken : BaseQueryFn<FetchArgs,BaseQueryApi,DefinitionT
         }
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/ts"}/auth/refresh-token`,
           {
             method: "POST",
             headers: {
