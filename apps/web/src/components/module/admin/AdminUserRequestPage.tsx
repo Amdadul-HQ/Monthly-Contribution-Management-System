@@ -47,234 +47,56 @@ import {
   MapPin,
   User,
   Download,
+  Loader2,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+import {
+  useGetAllUserRequestsQuery,
+  useApproveUserRequestMutation,
+  useRejectUserRequestMutation,
+  UserRequestDto
+} from "@/redux/api/user-management/userRequestApi"
 
-// Mock user request data - replace with your actual data
-const mockUserRequests : UserRequest[] = [
-  {
-    id: 1,
-    name: "Shahidul Islam",
-    email: "shahidul.islam@email.com",
-    phone: "+880 1712-987654",
-    nidNumber: "1234567890123",
-    address: "House 45, Road 12, Dhanmondi, Dhaka",
-    occupation: "Software Engineer",
-    emergencyContact: "+880 1798-123456",
-    emergencyContactName: "Fatima Islam",
-    emergencyContactRelation: "Wife",
-    registrationFee: 5000,
-    paymentMethod: "bKash",
-    transactionId: "BKS240920001",
-    paymentDate: "2024-09-20",
-    requestDate: "2024-09-20",
-    status: "Pending",
-    accountType: "Premium",
-    referredBy: "Mohammad Rahman (BDT-2024-001234)",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Referred by existing premium member. Has good financial background.",
-  },
-  {
-    id: 2,
-    name: "Rashida Khatun",
-    email: "rashida.khatun@email.com",
-    phone: "+880 1555-456789",
-    nidNumber: "9876543210987",
-    address: "Flat 3B, Green View Apartment, Uttara, Dhaka",
-    occupation: "Teacher",
-    emergencyContact: "+880 1666-789012",
-    emergencyContactName: "Abdul Khatun",
-    emergencyContactRelation: "Husband",
-    registrationFee: 3000,
-    paymentMethod: "Nagad",
-    transactionId: "NGD240919002",
-    paymentDate: "2024-09-19",
-    requestDate: "2024-09-19",
-    status: "Pending",
-    accountType: "Standard",
-    referredBy: "Self Registration",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Self-registered through website. All documents verified.",
-  },
-  {
-    id: 3,
-    name: "Aminul Haque",
-    email: "aminul.haque@email.com",
-    phone: "+880 1777-234567",
-    nidNumber: "5555666677778",
-    address: "Village: Rampur, Upazila: Savar, District: Dhaka",
-    occupation: "Business Owner",
-    emergencyContact: "+880 1888-345678",
-    emergencyContactName: "Salma Haque",
-    emergencyContactRelation: "Sister",
-    registrationFee: 5000,
-    paymentMethod: "Bank",
-    transactionId: "BNK240918003",
-    paymentDate: "2024-09-18",
-    requestDate: "2024-09-18",
-    status: "Approved",
-    accountType: "Premium",
-    referredBy: "Abdul Karim (BDT-2024-001236)",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Business owner with stable income. Approved for premium membership.",
-    approvedBy: "Admin User",
-    approvedDate: "2024-09-19",
-    memberId: "BDT-2024-001244",
-  },
-  {
-    id: 4,
-    name: "Nasir Ahmed",
-    email: "nasir.ahmed@email.com",
-    phone: "+880 1999-567890",
-    nidNumber: "1111222233334",
-    address: "House 78, Sector 7, Uttara, Dhaka",
-    occupation: "Government Employee",
-    emergencyContact: "+880 1444-678901",
-    emergencyContactName: "Rahima Ahmed",
-    emergencyContactRelation: "Mother",
-    registrationFee: 3000,
-    paymentMethod: "Rocket",
-    transactionId: "RKT240917004",
-    paymentDate: "2024-09-17",
-    requestDate: "2024-09-17",
-    status: "Rejected",
-    accountType: "Standard",
-    referredBy: "Self Registration",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Incomplete documentation. NID verification failed.",
-    rejectedBy: "Admin User",
-    rejectedDate: "2024-09-18",
-    rejectionReason: "NID verification failed. Documents do not match provided information.",
-  },
-  {
-    id: 5,
-    name: "Fatema Begum",
-    email: "fatema.begum@email.com",
-    phone: "+880 1333-789012",
-    nidNumber: "7777888899990",
-    address: "Road 15, Block C, Bashundhara R/A, Dhaka",
-    occupation: "Housewife",
-    emergencyContact: "+880 1222-890123",
-    emergencyContactName: "Karim Begum",
-    emergencyContactRelation: "Husband",
-    registrationFee: 2000,
-    paymentMethod: "bKash",
-    transactionId: "BKS240916005",
-    paymentDate: "2024-09-16",
-    requestDate: "2024-09-16",
-    status: "Pending",
-    accountType: "Basic",
-    referredBy: "Fatima Khatun (BDT-2024-001235)",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Referred by existing member. Housewife with husband's income support.",
-  },
-  {
-    id: 6,
-    name: "Mizanur Rahman",
-    email: "mizanur.rahman2@email.com",
-    phone: "+880 1666-345678",
-    nidNumber: "4444555566667",
-    address: "Flat 5A, City Center, Gulshan, Dhaka",
-    occupation: "Doctor",
-    emergencyContact: "+880 1777-456789",
-    emergencyContactName: "Ruma Rahman",
-    emergencyContactRelation: "Wife",
-    registrationFee: 5000,
-    paymentMethod: "Bank",
-    transactionId: "BNK240915006",
-    paymentDate: "2024-09-15",
-    requestDate: "2024-09-15",
-    status: "Pending",
-    accountType: "Premium",
-    referredBy: "Self Registration",
-    avatar: "/placeholder.svg?height=40&width=40",
-    documents: {
-      nidFront: "/placeholder.svg?height=200&width=300",
-      nidBack: "/placeholder.svg?height=200&width=300",
-      photo: "/placeholder.svg?height=200&width=200",
-    },
-    additionalNotes: "Medical professional with high income. Self-registered for premium membership.",
-  },
-]
-
-const statusOptions = ["All", "Pending", "Approved", "Rejected"]
+const statusOptions = ["All", "PENDING", "ACTIVE", "REJECTED"]
 const accountTypeOptions = ["All", "Premium", "Standard", "Basic"]
-const paymentMethodOptions = ["All", "bKash", "Nagad", "Rocket", "Bank"]
+const paymentMethodOptions = ["All", "BKASH", "NAGAD", "ROCKET", "BANK_TRANSFER", "HAND_TO_HAND"]
 
 type RequestStatus = "Pending" | "Approved" | "Rejected"
 type ActionType = "approve" | "reject"
 
-interface UserRequest {
-  id: number
-  name: string
-  email: string
-  phone: string
-  nidNumber: string
-  address: string
-  occupation: string
-  emergencyContact: string
-  emergencyContactName: string
-  emergencyContactRelation: string
-  registrationFee: number
-  paymentMethod: string
-  transactionId: string
-  paymentDate: string
-  requestDate: string
-  status: RequestStatus
-  accountType: string
-  referredBy: string
-  avatar: string
-  documents: {
-    nidFront: string
-    nidBack: string
-    photo: string
-  }
-  additionalNotes: string
-  approvedBy?: string
-  approvedDate?: string
-  memberId?: string
-  rejectedBy?: string
-  rejectedDate?: string
-  rejectionReason?: string
-}
-
 export function AdminUserRequestPage() {
-  const [requests, setRequests] = useState<UserRequest[]>(mockUserRequests)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [accountTypeFilter, setAccountTypeFilter] = useState("All")
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedAction, setSelectedAction] = useState<{ type: ActionType; request: UserRequest } | null>(null)
+  const [selectedAction, setSelectedAction] = useState<{ type: ActionType; request: UserRequestDto } | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
-  const [selectedRequest, setSelectedRequest] = useState<UserRequest | null>(null)
 
-  const itemsPerPage = 5
+  const itemsPerPage = 10
+
+  // Fetch user requests with filters
+  const { data, isLoading, isFetching, error, refetch } = useGetAllUserRequestsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm || undefined,
+    status: statusFilter !== "All" ? statusFilter : undefined,
+    accountType: accountTypeFilter !== "All" ? accountTypeFilter : undefined,
+    paymentMethod: paymentMethodFilter !== "All" ? paymentMethodFilter : undefined,
+  })
+
+  // Mutations
+  const [approveRequest, { isLoading: isApproving }] = useApproveUserRequestMutation()
+  const [rejectRequest, { isLoading: isRejecting }] = useRejectUserRequestMutation()
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, accountTypeFilter, paymentMethodFilter])
+
+  const requests = data?.data?.requests || []
+  const pagination = data?.data?.pagination || { page: 1, limit: itemsPerPage, total: 0, totalPages: 1 }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -297,7 +119,7 @@ export function AdminUserRequestPage() {
     }
   }
 
-  const getStatusIcon = (status: RequestStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "Pending":
         return <Clock className="h-4 w-4 text-orange-600" />
@@ -324,91 +146,67 @@ export function AdminUserRequestPage() {
   }
 
   const getPaymentMethodIcon = (method: string) => {
-    switch (method.toLowerCase()) {
-      case "bkash":
-        return <Smartphone className="h-4 w-4 text-pink-600" />
-      case "nagad":
-        return <Smartphone className="h-4 w-4 text-orange-600" />
-      case "rocket":
-        return <Smartphone className="h-4 w-4 text-purple-600" />
-      case "bank":
-        return <Building2 className="h-4 w-4 text-blue-600" />
-      default:
-        return <CreditCard className="h-4 w-4 text-gray-600" />
-    }
+    const methodLower = method?.toLowerCase() || ""
+    if (methodLower.includes("bkash")) return <Smartphone className="h-4 w-4 text-pink-600" />
+    if (methodLower.includes("nagad")) return <Smartphone className="h-4 w-4 text-orange-600" />
+    if (methodLower.includes("rocket")) return <Smartphone className="h-4 w-4 text-purple-600" />
+    if (methodLower.includes("bank")) return <Building2 className="h-4 w-4 text-blue-600" />
+    return <CreditCard className="h-4 w-4 text-gray-600" />
   }
 
   const getPaymentMethodColor = (method: string) => {
-    const colors = {
-      bKash: "bg-pink-100 text-pink-800 border-pink-200",
-      Nagad: "bg-orange-100 text-orange-800 border-orange-200",
-      Rocket: "bg-purple-100 text-purple-800 border-purple-200",
-      Bank: "bg-blue-100 text-blue-800 border-blue-200",
-    }
-    return colors[method as keyof typeof colors] || colors.Bank
+    const methodLower = method?.toLowerCase() || ""
+    if (methodLower.includes("bkash")) return "bg-pink-100 text-pink-800 border-pink-200"
+    if (methodLower.includes("nagad")) return "bg-orange-100 text-orange-800 border-orange-200"
+    if (methodLower.includes("rocket")) return "bg-purple-100 text-purple-800 border-purple-200"
+    if (methodLower.includes("bank") || methodLower.includes("transfer")) return "bg-blue-100 text-blue-800 border-blue-200"
+    return "bg-gray-100 text-gray-800 border-gray-200"
   }
 
-  // Filter requests based on search and filters
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.phone.includes(searchTerm) ||
-      request.transactionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.nidNumber.includes(searchTerm)
-
-    const matchesStatus = statusFilter === "All" || request.status === statusFilter
-    const matchesAccountType = accountTypeFilter === "All" || request.accountType === accountTypeFilter
-    const matchesPaymentMethod = paymentMethodFilter === "All" || request.paymentMethod === paymentMethodFilter
-
-    return matchesSearch && matchesStatus && matchesAccountType && matchesPaymentMethod
-  })
-
-  // Pagination
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage)
-
   // Handle request actions
-  const handleRequestAction = (type: ActionType, request: UserRequest) => {
+  const handleRequestAction = (type: ActionType, request: UserRequestDto) => {
     setSelectedAction({ type, request })
     if (type === "reject") {
       setRejectionReason("")
     }
   }
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (!selectedAction) return
 
     const { type, request } = selectedAction
 
-    setRequests((prevRequests) =>
-      prevRequests.map((r) => {
-        if (r.id === request.id) {
-          if (type === "approve") {
-            return {
-              ...r,
-              status: "Approved" as RequestStatus,
-              approvedBy: "Admin User",
-              approvedDate: new Date().toISOString().split("T")[0],
-              memberId: `BDT-2024-${String(Date.now()).slice(-6)}`,
-            }
-          } else if (type === "reject") {
-            return {
-              ...r,
-              status: "Rejected" as RequestStatus,
-              rejectedBy: "Admin User",
-              rejectedDate: new Date().toISOString().split("T")[0],
-              rejectionReason: rejectionReason || "No reason provided",
-            }
-          }
-        }
-        return r
-      }),
-    )
+    try {
+      if (type === "approve") {
+        const result = await approveRequest({
+          id: request.id,
+          data: { notes: "" }
+        }).unwrap()
 
-    setSelectedAction(null)
-    setRejectionReason("")
+        toast.success(result.message || "User request approved successfully")
+      } else if (type === "reject") {
+        if (!rejectionReason.trim()) {
+          toast.error("Rejection reason is required")
+          return
+        }
+
+        const result = await rejectRequest({
+          id: request.id,
+          data: { rejectionReason }
+        }).unwrap()
+
+        toast.success(result.message || "User request rejected successfully")
+      }
+
+      // Close the dialog and reset states
+      setSelectedAction(null)
+      setRejectionReason("")
+
+      // Refetch data to get updated list
+      refetch()
+    } catch (error: any) {
+      toast.error(error?.data?.message || `Failed to ${type} user request`)
+    }
   }
 
   return (
@@ -541,346 +339,53 @@ export function AdminUserRequestPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900">
             <UserPlus className="h-5 w-5 text-blue-600" />
-            Registration Requests ({filteredRequests.length})
+            Registration Requests ({pagination.total})
           </CardTitle>
           <CardDescription className="text-gray-700">
-            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} of{" "}
-            {filteredRequests.length} requests
+            {isLoading || isFetching ? (
+              "Loading..."
+            ) : (
+              `Showing ${(pagination.page - 1) * pagination.limit + 1}-${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} requests`
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Mobile Card View */}
-          <div className="block md:hidden space-y-4">
-            {paginatedRequests.map((request) => (
-              <Card
-                key={request.id}
-                className={`${
-                  request.status === "Rejected"
-                    ? "bg-red-50/50 border-red-200/50"
-                    : request.status === "Approved"
-                      ? "bg-green-50/50 border-green-200/50"
-                      : "bg-orange-50/50 border-orange-200/50"
-                } backdrop-blur-sm shadow-sm`}
-              >
-                <CardContent className="p-4 space-y-4">
-                  {/* Header with Avatar and Status */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={request.avatar || "/placeholder.svg"} alt={request.name} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {request.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{request.name}</h3>
-                        <p className="text-sm text-gray-600">{request.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(request.status)}
-                      <Badge className={`${getStatusColor(request.status)} text-xs`}>{request.status}</Badge>
-                    </div>
-                  </div>
+          {/* Loading State */}
+          {(isLoading || isFetching) && (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-2 text-gray-600">Loading requests...</span>
+            </div>
+          )}
 
-                  {/* Contact Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-700">{request.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-700">{request.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-700">{request.occupation}</span>
-                    </div>
-                  </div>
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-8">
+              <div className="text-red-500 mb-2">Error loading requests</div>
+              <div className="text-sm text-gray-400">Please try again later</div>
+            </div>
+          )}
 
-                  {/* Registration Details */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-600 mb-1">Registration Fee</div>
-                      <div className="font-semibold text-green-600">{formatCurrency(request.registrationFee)}</div>
-                    </div>
-                    <div className="bg-white/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-600 mb-1">Account Type</div>
-                      <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
-                        {request.accountType}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Payment Details */}
-                  <div className="bg-blue-50/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      {getPaymentMethodIcon(request.paymentMethod)}
-                      <Badge className={`${getPaymentMethodColor(request.paymentMethod)} text-xs`}>
-                        {request.paymentMethod}
-                      </Badge>
-                    </div>
-                    <div className="text-sm">
-                      <div className="text-xs text-gray-600">Transaction ID</div>
-                      <div className="font-mono text-gray-900">{request.transactionId}</div>
-                    </div>
-                  </div>
-
-                  {/* Request Date */}
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <div className="text-xs text-gray-600 mb-1">Request Date</div>
-                    <div className="text-sm text-gray-900">
-                      {new Date(request.requestDate).toLocaleDateString("en-BD")}
-                    </div>
-                  </div>
-
-                  {/* Referred By */}
-                  <div className="bg-purple-50/50 rounded-lg p-2">
-                    <div className="text-xs text-gray-600 mb-1">Referred By</div>
-                    <div className="text-sm text-gray-900">{request.referredBy}</div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  {request.status === "Pending" && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl"
-                        onClick={() => handleRequestAction("approve", request)}
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="flex-1 rounded-xl"
-                        onClick={() => handleRequestAction("reject", request)}
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1 rounded-xl">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Registration Request Details</DialogTitle>
-                          <DialogDescription>Complete information for {request.name}</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          {/* Personal Information */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">Full Name</label>
-                              <div className="text-gray-900">{request.name}</div>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">NID Number</label>
-                              <div className="font-mono text-gray-900">{request.nidNumber}</div>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">Email</label>
-                              <div className="text-gray-900">{request.email}</div>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">Phone</label>
-                              <div className="text-gray-900">{request.phone}</div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="text-sm font-medium text-gray-600">Address</label>
-                            <div className="text-gray-900">{request.address}</div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">Occupation</label>
-                              <div className="text-gray-900">{request.occupation}</div>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-600">Account Type</label>
-                              <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
-                                {request.accountType}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          {/* Emergency Contact */}
-                          <div className="border-t pt-4">
-                            <h4 className="font-medium text-gray-900 mb-2">Emergency Contact</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Name</label>
-                                <div className="text-gray-900">{request.emergencyContactName}</div>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Relation</label>
-                                <div className="text-gray-900">{request.emergencyContactRelation}</div>
-                              </div>
-                            </div>
-                            <div className="mt-2">
-                              <label className="text-sm font-medium text-gray-600">Phone</label>
-                              <div className="text-gray-900">{request.emergencyContact}</div>
-                            </div>
-                          </div>
-
-                          {/* Payment Information */}
-                          <div className="border-t pt-4">
-                            <h4 className="font-medium text-gray-900 mb-2">Payment Information</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Registration Fee</label>
-                                <div className="font-semibold text-green-600">
-                                  {formatCurrency(request.registrationFee)}
-                                </div>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Payment Method</label>
-                                <div className="flex items-center gap-2">
-                                  {getPaymentMethodIcon(request.paymentMethod)}
-                                  <span className="text-gray-900">{request.paymentMethod}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 mt-2">
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Transaction ID</label>
-                                <div className="font-mono text-gray-900">{request.transactionId}</div>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Payment Date</label>
-                                <div className="text-gray-900">
-                                  {new Date(request.paymentDate).toLocaleDateString("en-BD")}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Additional Information */}
-                          <div className="border-t pt-4">
-                            <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Referred By</label>
-                                <div className="text-gray-900">{request.referredBy}</div>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-600">Request Date</label>
-                                <div className="text-gray-900">
-                                  {new Date(request.requestDate).toLocaleDateString("en-BD")}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-2">
-                              <label className="text-sm font-medium text-gray-600">Notes</label>
-                              <div className="text-gray-900">{request.additionalNotes}</div>
-                            </div>
-                          </div>
-
-                          {/* Status Information */}
-                          {(request.status === "Approved" || request.status === "Rejected") && (
-                            <div className="border-t pt-4">
-                              <h4 className="font-medium text-gray-900 mb-2">Status Information</h4>
-                              {request.status === "Approved" && (
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Approved By</label>
-                                    <div className="text-gray-900">{request.approvedBy}</div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Approved Date</label>
-                                    <div className="text-gray-900">
-                                      {request.approvedDate &&
-                                        new Date(request.approvedDate).toLocaleDateString("en-BD")}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Member ID</label>
-                                    <div className="font-mono text-blue-600">{request.memberId}</div>
-                                  </div>
-                                </div>
-                              )}
-                              {request.status === "Rejected" && (
-                                <div className="space-y-2">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Rejected By</label>
-                                      <div className="text-gray-900">{request.rejectedBy}</div>
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Rejected Date</label>
-                                      <div className="text-gray-900">
-                                        {request.rejectedDate &&
-                                          new Date(request.rejectedDate).toLocaleDateString("en-BD")}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Rejection Reason</label>
-                                    <div className="text-red-600">{request.rejectionReason}</div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden md:block rounded-xl border border-white/30 bg-white/50 overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-blue-50/50 border-blue-100/50">
-                    <TableHead className="text-gray-900 font-semibold">Applicant</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Contact</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Registration Fee</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Payment Details</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Account Type</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Status</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Request Date</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedRequests.map((request) => (
-                    <TableRow
-                      key={request.id}
-                      className={`border-blue-100/30 hover:bg-blue-50/30 transition-colors ${
-                        request.status === "Rejected"
-                          ? "bg-red-50/20"
-                          : request.status === "Approved"
-                            ? "bg-green-50/20"
-                            : "bg-orange-50/20"
-                      }`}
-                    >
-                      <TableCell>
+          {/* Content */}
+          {!isLoading && !isFetching && !error && (
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-4">
+                {requests.map((request) => (
+                  <Card
+                    key={request.id}
+                    className={`${request.status === "Rejected"
+                      ? "bg-red-50/50 border-red-200/50"
+                      : request.status === "Approved"
+                        ? "bg-green-50/50 border-green-200/50"
+                        : "bg-orange-50/50 border-orange-200/50"
+                      } backdrop-blur-sm shadow-sm`}
+                  >
+                    <CardContent className="p-4 space-y-4">
+                      {/* Header with Avatar and Status */}
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={request.avatar || "/placeholder.svg"} alt={request.name} />
+                          <Avatar className="h-12 w-12">
                             <AvatarFallback className="bg-blue-100 text-blue-600">
                               {request.name
                                 .split(" ")
@@ -889,303 +394,620 @@ export function AdminUserRequestPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-gray-900">{request.name}</p>
-                            <p className="text-sm text-gray-600">{request.occupation}</p>
+                            <h3 className="font-semibold text-gray-900">{request.name}</h3>
+                            <p className="text-sm text-gray-600">{request.email}</p>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm text-gray-900">{request.email}</p>
-                          <p className="text-sm text-gray-600">{request.phone}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-semibold text-green-600">
-                        {formatCurrency(request.registrationFee)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            {getPaymentMethodIcon(request.paymentMethod)}
-                            <Badge className={`${getPaymentMethodColor(request.paymentMethod)} text-xs`}>
-                              {request.paymentMethod}
-                            </Badge>
-                          </div>
-                          <p className="text-xs font-mono text-gray-600">{request.transactionId}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
-                          {request.accountType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
                         <div className="flex items-center gap-2">
                           {getStatusIcon(request.status)}
-                          <Badge className={`${getStatusColor(request.status)} text-xs`}>{request.status}</Badge>
+                          <Badge className={`${getStatusColor(request.status as RequestStatus)} text-xs`}>{request.status}</Badge>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-gray-900">
-                        {new Date(request.requestDate).toLocaleDateString("en-BD")}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {request.status === "Pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="h-8 bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleRequestAction("approve", request)}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-8"
-                                onClick={() => handleRequestAction("reject", request)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Registration Request Details</DialogTitle>
-                                <DialogDescription>Complete information for {request.name}</DialogDescription>
-                              </DialogHeader>
-                              {/* Same detailed view content as mobile */}
-                              <div className="space-y-4">
-                                {/* Personal Information */}
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Full Name</label>
-                                    <div className="text-gray-900">{request.name}</div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">NID Number</label>
-                                    <div className="font-mono text-gray-900">{request.nidNumber}</div>
-                                  </div>
-                                </div>
+                      </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Email</label>
-                                    <div className="text-gray-900">{request.email}</div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                                    <div className="text-gray-900">{request.phone}</div>
-                                  </div>
-                                </div>
+                      {/* Contact Info */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700">{request.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700">{request.address}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700">{request.occupation}</span>
+                        </div>
+                      </div>
 
+                      {/* Registration Details */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">Registration Fee</div>
+                          <div className="font-semibold text-green-600">{formatCurrency(request.registrationFee)}</div>
+                        </div>
+                        <div className="bg-white/50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">Account Type</div>
+                          <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
+                            {request.accountType}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Payment Details */}
+                      <div className="bg-blue-50/50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          {getPaymentMethodIcon(request.paymentMethod)}
+                          <Badge className={`${getPaymentMethodColor(request.paymentMethod)} text-xs`}>
+                            {request.paymentMethod}
+                          </Badge>
+                        </div>
+                        <div className="text-sm">
+                          <div className="text-xs text-gray-600">Transaction ID</div>
+                          <div className="font-mono text-gray-900">{request.transactionId}</div>
+                        </div>
+                      </div>
+
+                      {/* Request Date */}
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <div className="text-xs text-gray-600 mb-1">Request Date</div>
+                        <div className="text-sm text-gray-900">
+                          {new Date(request.requestDate).toLocaleDateString("en-BD")}
+                        </div>
+                      </div>
+
+                      {/* Referred By */}
+                      <div className="bg-purple-50/50 rounded-lg p-2">
+                        <div className="text-xs text-gray-600 mb-1">Referred By</div>
+                        <div className="text-sm text-gray-900">{request.referredBy}</div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      {request.status === "Pending" && (
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                            onClick={() => handleRequestAction("approve", request)}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="flex-1 rounded-xl"
+                            onClick={() => handleRequestAction("reject", request)}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1 rounded-xl">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Registration Request Details</DialogTitle>
+                              <DialogDescription>Complete information for {request.name}</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              {/* Personal Information */}
+                              <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <label className="text-sm font-medium text-gray-600">Address</label>
-                                  <div className="text-gray-900">{request.address}</div>
+                                  <label className="text-sm font-medium text-gray-600">Full Name</label>
+                                  <div className="text-gray-900">{request.name}</div>
                                 </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">NID Number</label>
+                                  <div className="font-mono text-gray-900">{request.nidNumber}</div>
+                                </div>
+                              </div>
 
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Email</label>
+                                  <div className="text-gray-900">{request.email}</div>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Phone</label>
+                                  <div className="text-gray-900">{request.phone}</div>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-medium text-gray-600">Address</label>
+                                <div className="text-gray-900">{request.address}</div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Occupation</label>
+                                  <div className="text-gray-900">{request.occupation}</div>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Account Type</label>
+                                  <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
+                                    {request.accountType}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Emergency Contact */}
+                              <div className="border-t pt-4">
+                                <h4 className="font-medium text-gray-900 mb-2">Emergency Contact</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">Occupation</label>
-                                    <div className="text-gray-900">{request.occupation}</div>
+                                    <label className="text-sm font-medium text-gray-600">Name</label>
+                                    <div className="text-gray-900">{request.emergencyContactName}</div>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">Account Type</label>
-                                    <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
-                                      {request.accountType}
-                                    </Badge>
+                                    <label className="text-sm font-medium text-gray-600">Relation</label>
+                                    <div className="text-gray-900">{request.emergencyContactRelation}</div>
                                   </div>
                                 </div>
+                                <div className="mt-2">
+                                  <label className="text-sm font-medium text-gray-600">Phone</label>
+                                  <div className="text-gray-900">{request.emergencyContact}</div>
+                                </div>
+                              </div>
 
-                                {/* Emergency Contact */}
+                              {/* Payment Information */}
+                              <div className="border-t pt-4">
+                                <h4 className="font-medium text-gray-900 mb-2">Payment Information</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Registration Fee</label>
+                                    <div className="font-semibold text-green-600">
+                                      {formatCurrency(request.registrationFee)}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Payment Method</label>
+                                    <div className="flex items-center gap-2">
+                                      {getPaymentMethodIcon(request.paymentMethod)}
+                                      <span className="text-gray-900">{request.paymentMethod}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Transaction ID</label>
+                                    <div className="font-mono text-gray-900">{request.transactionId}</div>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Payment Date</label>
+                                    <div className="text-gray-900">
+                                      {new Date(request.paymentDate).toLocaleDateString("en-BD")}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Additional Information */}
+                              <div className="border-t pt-4">
+                                <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Referred By</label>
+                                    <div className="text-gray-900">{request.referredBy}</div>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Request Date</label>
+                                    <div className="text-gray-900">
+                                      {new Date(request.requestDate).toLocaleDateString("en-BD")}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-2">
+                                  <label className="text-sm font-medium text-gray-600">Notes</label>
+                                  <div className="text-gray-900">{request.additionalNotes}</div>
+                                </div>
+                              </div>
+
+                              {/* Status Information */}
+                              {(request.status === "Approved" || request.status === "Rejected") && (
                                 <div className="border-t pt-4">
-                                  <h4 className="font-medium text-gray-900 mb-2">Emergency Contact</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Name</label>
-                                      <div className="text-gray-900">{request.emergencyContactName}</div>
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Relation</label>
-                                      <div className="text-gray-900">{request.emergencyContactRelation}</div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2">
-                                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                                    <div className="text-gray-900">{request.emergencyContact}</div>
-                                  </div>
-                                </div>
-
-                                {/* Payment Information */}
-                                <div className="border-t pt-4">
-                                  <h4 className="font-medium text-gray-900 mb-2">Payment Information</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Registration Fee</label>
-                                      <div className="font-semibold text-green-600">
-                                        {formatCurrency(request.registrationFee)}
+                                  <h4 className="font-medium text-gray-900 mb-2">Status Information</h4>
+                                  {request.status === "Approved" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Approved By</label>
+                                        <div className="text-gray-900">{request.approvedBy}</div>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Approved Date</label>
+                                        <div className="text-gray-900">
+                                          {request.approvedDate &&
+                                            new Date(request.approvedDate).toLocaleDateString("en-BD")}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Member ID</label>
+                                        <div className="font-mono text-blue-600">{request.memberId}</div>
                                       </div>
                                     </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Payment Method</label>
-                                      <div className="flex items-center gap-2">
-                                        {getPaymentMethodIcon(request.paymentMethod)}
-                                        <span className="text-gray-900">{request.paymentMethod}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4 mt-2">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Transaction ID</label>
-                                      <div className="font-mono text-gray-900">{request.transactionId}</div>
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Payment Date</label>
-                                      <div className="text-gray-900">
-                                        {new Date(request.paymentDate).toLocaleDateString("en-BD")}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Additional Information */}
-                                <div className="border-t pt-4">
-                                  <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Referred By</label>
-                                      <div className="text-gray-900">{request.referredBy}</div>
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-600">Request Date</label>
-                                      <div className="text-gray-900">
-                                        {new Date(request.requestDate).toLocaleDateString("en-BD")}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2">
-                                    <label className="text-sm font-medium text-gray-600">Notes</label>
-                                    <div className="text-gray-900">{request.additionalNotes}</div>
-                                  </div>
-                                </div>
-
-                                {/* Status Information */}
-                                {(request.status === "Approved" || request.status === "Rejected") && (
-                                  <div className="border-t pt-4">
-                                    <h4 className="font-medium text-gray-900 mb-2">Status Information</h4>
-                                    {request.status === "Approved" && (
+                                  )}
+                                  {request.status === "Rejected" && (
+                                    <div className="space-y-2">
                                       <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                          <label className="text-sm font-medium text-gray-600">Approved By</label>
-                                          <div className="text-gray-900">{request.approvedBy}</div>
+                                          <label className="text-sm font-medium text-gray-600">Rejected By</label>
+                                          <div className="text-gray-900">{request.rejectedBy}</div>
                                         </div>
                                         <div>
-                                          <label className="text-sm font-medium text-gray-600">Approved Date</label>
+                                          <label className="text-sm font-medium text-gray-600">Rejected Date</label>
                                           <div className="text-gray-900">
-                                            {request.approvedDate &&
-                                              new Date(request.approvedDate).toLocaleDateString("en-BD")}
+                                            {request.rejectedDate &&
+                                              new Date(request.rejectedDate).toLocaleDateString("en-BD")}
                                           </div>
-                                        </div>
-                                        <div>
-                                          <label className="text-sm font-medium text-gray-600">Member ID</label>
-                                          <div className="font-mono text-blue-600">{request.memberId}</div>
                                         </div>
                                       </div>
-                                    )}
-                                    {request.status === "Rejected" && (
-                                      <div className="space-y-2">
-                                        <div className="grid grid-cols-2 gap-4">
-                                          <div>
-                                            <label className="text-sm font-medium text-gray-600">Rejected By</label>
-                                            <div className="text-gray-900">{request.rejectedBy}</div>
-                                          </div>
-                                          <div>
-                                            <label className="text-sm font-medium text-gray-600">Rejected Date</label>
-                                            <div className="text-gray-900">
-                                              {request.rejectedDate &&
-                                                new Date(request.rejectedDate).toLocaleDateString("en-BD")}
-                                            </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Rejection Reason</label>
+                                        <div className="text-red-600">{request.rejectionReason}</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-xl border border-white/30 bg-white/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50/50 border-blue-100/50">
+                        <TableHead className="text-gray-900 font-semibold">Applicant</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Contact</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Registration Fee</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Payment Details</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Account Type</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Status</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Request Date</TableHead>
+                        <TableHead className="text-gray-900 font-semibold">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {requests.map((request) => (
+                        <TableRow
+                          key={request.id}
+                          className={`border-blue-100/30 hover:bg-blue-50/30 transition-colors ${request.status === "Rejected"
+                            ? "bg-red-50/20"
+                            : request.status === "Approved"
+                              ? "bg-green-50/20"
+                              : "bg-orange-50/20"
+                            }`}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-blue-100 text-blue-600">
+                                  {request.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-gray-900">{request.name}</p>
+                                <p className="text-sm text-gray-600">{request.occupation}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm text-gray-900">{request.email}</p>
+                              <p className="text-sm text-gray-600">{request.phone}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-green-600">
+                            {formatCurrency(request.registrationFee)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                {getPaymentMethodIcon(request.paymentMethod)}
+                                <Badge className={`${getPaymentMethodColor(request.paymentMethod)} text-xs`}>
+                                  {request.paymentMethod}
+                                </Badge>
+                              </div>
+                              <p className="text-xs font-mono text-gray-600">{request.transactionId}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
+                              {request.accountType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(request.status)}
+                              <Badge className={`${getStatusColor(request.status as RequestStatus)} text-xs`}>{request.status}</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-900">
+                            {new Date(request.requestDate).toLocaleDateString("en-BD")}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {request.status === "Pending" && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                                    onClick={() => handleRequestAction("approve", request)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-8"
+                                    onClick={() => handleRequestAction("reject", request)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Registration Request Details</DialogTitle>
+                                    <DialogDescription>Complete information for {request.name}</DialogDescription>
+                                  </DialogHeader>
+                                  {/* Same detailed view content as mobile */}
+                                  <div className="space-y-4">
+                                    {/* Personal Information */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Full Name</label>
+                                        <div className="text-gray-900">{request.name}</div>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">NID Number</label>
+                                        <div className="font-mono text-gray-900">{request.nidNumber}</div>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Email</label>
+                                        <div className="text-gray-900">{request.email}</div>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Phone</label>
+                                        <div className="text-gray-900">{request.phone}</div>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-600">Address</label>
+                                      <div className="text-gray-900">{request.address}</div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Occupation</label>
+                                        <div className="text-gray-900">{request.occupation}</div>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-600">Account Type</label>
+                                        <Badge className={`${getAccountTypeColor(request.accountType)} text-xs`}>
+                                          {request.accountType}
+                                        </Badge>
+                                      </div>
+                                    </div>
+
+                                    {/* Emergency Contact */}
+                                    <div className="border-t pt-4">
+                                      <h4 className="font-medium text-gray-900 mb-2">Emergency Contact</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Name</label>
+                                          <div className="text-gray-900">{request.emergencyContactName}</div>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Relation</label>
+                                          <div className="text-gray-900">{request.emergencyContactRelation}</div>
+                                        </div>
+                                      </div>
+                                      <div className="mt-2">
+                                        <label className="text-sm font-medium text-gray-600">Phone</label>
+                                        <div className="text-gray-900">{request.emergencyContact}</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Payment Information */}
+                                    <div className="border-t pt-4">
+                                      <h4 className="font-medium text-gray-900 mb-2">Payment Information</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Registration Fee</label>
+                                          <div className="font-semibold text-green-600">
+                                            {formatCurrency(request.registrationFee)}
                                           </div>
                                         </div>
                                         <div>
-                                          <label className="text-sm font-medium text-gray-600">Rejection Reason</label>
-                                          <div className="text-red-600">{request.rejectionReason}</div>
+                                          <label className="text-sm font-medium text-gray-600">Payment Method</label>
+                                          <div className="flex items-center gap-2">
+                                            {getPaymentMethodIcon(request.paymentMethod)}
+                                            <span className="text-gray-900">{request.paymentMethod}</span>
+                                          </div>
                                         </div>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4 mt-2">
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Transaction ID</label>
+                                          <div className="font-mono text-gray-900">{request.transactionId}</div>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Payment Date</label>
+                                          <div className="text-gray-900">
+                                            {new Date(request.paymentDate).toLocaleDateString("en-BD")}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Additional Information */}
+                                    <div className="border-t pt-4">
+                                      <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Referred By</label>
+                                          <div className="text-gray-900">{request.referredBy}</div>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-600">Request Date</label>
+                                          <div className="text-gray-900">
+                                            {new Date(request.requestDate).toLocaleDateString("en-BD")}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="mt-2">
+                                        <label className="text-sm font-medium text-gray-600">Notes</label>
+                                        <div className="text-gray-900">{request.additionalNotes}</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Status Information */}
+                                    {(request.status === "Approved" || request.status === "Rejected") && (
+                                      <div className="border-t pt-4">
+                                        <h4 className="font-medium text-gray-900 mb-2">Status Information</h4>
+                                        {request.status === "Approved" && (
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="text-sm font-medium text-gray-600">Approved By</label>
+                                              <div className="text-gray-900">{request.approvedBy}</div>
+                                            </div>
+                                            <div>
+                                              <label className="text-sm font-medium text-gray-600">Approved Date</label>
+                                              <div className="text-gray-900">
+                                                {request.approvedDate &&
+                                                  new Date(request.approvedDate).toLocaleDateString("en-BD")}
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="text-sm font-medium text-gray-600">Member ID</label>
+                                              <div className="font-mono text-blue-600">{request.memberId}</div>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {request.status === "Rejected" && (
+                                          <div className="space-y-2">
+                                            <div className="grid grid-cols-2 gap-4">
+                                              <div>
+                                                <label className="text-sm font-medium text-gray-600">Rejected By</label>
+                                                <div className="text-gray-900">{request.rejectedBy}</div>
+                                              </div>
+                                              <div>
+                                                <label className="text-sm font-medium text-gray-600">Rejected Date</label>
+                                                <div className="text-gray-900">
+                                                  {request.rejectedDate &&
+                                                    new Date(request.rejectedDate).toLocaleDateString("en-BD")}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="text-sm font-medium text-gray-600">Rejection Reason</label>
+                                              <div className="text-red-600">{request.rejectionReason}</div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* No results message */}
-          {filteredRequests.length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-gray-500 mb-2">No requests found</div>
-              <div className="text-sm text-gray-400">Try adjusting your search or filter criteria</div>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} of{" "}
-                {filteredRequests.length} requests
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-xl"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 p-0 rounded-xl ${
-                        currentPage === page ? "bg-blue-600 text-white" : "bg-white/70 hover:bg-blue-50"
-                      }`}
-                    >
-                      {page}
-                    </Button>
-                  ))}
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-xl"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
-            </div>
+
+              {/* No results message */}
+              {!isLoading && !isFetching && requests.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 mb-2">No requests found</div>
+                  <div className="text-sm text-gray-400">Try adjusting your search or filter criteria</div>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!isLoading && !isFetching && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="text-sm text-gray-600">
+                    Showing {(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+                    {pagination.total} requests
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={pagination.page === 1 || isLoading || isFetching}
+                      className="rounded-xl"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                        // Show first page, current page, and last page, with ellipsis
+                        const page = i + Math.max(1, Math.min(pagination.page - 2, pagination.totalPages - 4))
+                        return (
+                          <Button
+                            key={page}
+                            variant={pagination.page === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            disabled={isLoading || isFetching}
+                            className={`w-8 h-8 p-0 rounded-xl ${pagination.page === page ? "bg-blue-600 text-white" : "bg-white/70 hover:bg-blue-50"
+                              }`}
+                          >
+                            {page}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                      disabled={pagination.page === pagination.totalPages || isLoading || isFetching}
+                      className="rounded-xl"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -1205,9 +1027,14 @@ export function AdminUserRequestPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction} className="bg-green-600 hover:bg-green-700">
-              Approve Request
+            <AlertDialogCancel disabled={isApproving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAction}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isApproving}
+            >
+              {isApproving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isApproving ? "Approving..." : "Approve Request"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1235,13 +1062,14 @@ export function AdminUserRequestPage() {
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isRejecting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmAction}
               className="bg-red-600 hover:bg-red-700"
-              disabled={!rejectionReason.trim()}
+              disabled={!rejectionReason.trim() || isRejecting}
             >
-              Reject Request
+              {isRejecting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isRejecting ? "Rejecting..." : "Reject Request"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
