@@ -26,6 +26,9 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Calendar } from "@workspace/ui/components/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
+import { toast } from "sonner"
+import { useCreateDepositMutation } from "@/redux/api/deposit/depositApi"
+import { useUploadDocumentMutation } from "@/redux/api/document/documentApi"
 
 type PaymentMethod = "hand-to-hand" | "bkash" | "nagad" | "rocket" | "bank"
 type ReferencePersons = "Afran Sojib" | "Xhamix Shuvo"
@@ -66,6 +69,10 @@ export function DepositForm() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
+  // Redux mutations
+  const [createDeposit, { isLoading: isCreatingDeposit }] = useCreateDepositMutation()
+  const [uploadDocument, { isLoading: isUploadingDocument }] = useUploadDocumentMutation()
+
   const {
     register,
     handleSubmit,
@@ -95,7 +102,7 @@ export function DepositForm() {
 
   const watchedPaymentMethod = watch("paymentMethod")
   const watchedProofImage = watch("proofImage")
-    const watchedAmount = watch("amount")
+  const watchedAmount = watch("amount")
 
   // Calculate penalty
   const calculatePenalty = (amount: string) => {
@@ -117,7 +124,7 @@ export function DepositForm() {
   useEffect(() => {
     if (watchedProofImage && watchedProofImage.length > 0) {
       const file = watchedProofImage[0]
-      if(!file){
+      if (!file) {
         return
       }
       const previewUrl = URL.createObjectURL(file)
@@ -145,21 +152,76 @@ export function DepositForm() {
     setSubmitStatus("idle")
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      let proofImageUrl = ""
 
-      // Here you would typically send the data to your backend
-      console.log("Form submitted:", data)
+      // Step 1: Upload payment proof image if provided
+      if (data.proofImage && data.proofImage.length > 0) {
+        const file = data.proofImage[0]
+        if (file) {
+          const formData = new FormData()
+          formData.append("file", file)
+          formData.append("folder", "deposit-proofs")
 
+          const uploadResult = await uploadDocument(formData).unwrap()
+          proofImageUrl = uploadResult.data.secureUrl
+        }
+      }
+
+      // Step 2: Map payment method to backend enum
+      const paymentMethodMap: Record<PaymentMethod, string> = {
+        "hand-to-hand": "HAND_TO_HAND",
+        "bkash": "BKASH",
+        "nagad": "NAGAD",
+        "rocket": "ROCKET",
+        "bank": "BANK_TRANSFER",
+      }
+
+      // Step 3: Prepare deposit data
+      const depositData: any = {
+        depositMonth: data.month?.toISOString(),
+        depositAmount: Number.parseFloat(data.amount),
+        paymentMethod: paymentMethodMap[data.paymentMethod as PaymentMethod],
+        referencePerson: data.referencePerson,
+        proofImage: proofImageUrl,
+        notes: data.notes || undefined,
+      }
+
+      // Step 4: Add payment method specific details
+      if (data.paymentMethod === "hand-to-hand") {
+        depositData.handToHandDetails = {
+          receiverName: data.receiverName,
+          location: data.location,
+          handoverDate: data.date,
+          handoverTime: data.time,
+        }
+      } else if (["bkash", "nagad", "rocket"].includes(data.paymentMethod)) {
+        depositData.mobilePaymentDetails = {
+          provider: paymentMethodMap[data.paymentMethod as PaymentMethod],
+          phoneNumber: data.phoneNumber,
+          transactionId: data.transactionId,
+        }
+      } else if (data.paymentMethod === "bank") {
+        depositData.bankTransferDetails = {
+          accountNumber: data.accountNumber,
+          accountHolderName: data.bankHolderName,
+        }
+      }
+
+      // Step 5: Create deposit
+      const result = await createDeposit(depositData).unwrap()
+
+      toast.success(result.message || "Deposit submitted successfully!")
       setSubmitStatus("success")
+
       // Reset form after successful submission
       setTimeout(() => {
         reset()
         setImagePreview(null)
         setSubmitStatus("idle")
       }, 3000)
-    } catch (error) {
+    } catch (error: any) {
       setSubmitStatus("error")
+      toast.error(error?.data?.message || "Failed to submit deposit. Please try again.")
       console.error("Submission error:", error)
     } finally {
       setIsSubmitting(false)
@@ -202,23 +264,23 @@ export function DepositForm() {
 
         {/* Penalty Disclaimer */}
         {
-            isAfter15th() && <Alert className="mb-6 border-orange-200 bg-orange-50/50">
-          <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
-            <div className="space-y-2">
-              <p className="font-medium">⚠️ Late Payment Penalty Notice</p>
-              <p className="text-sm">
-                Deposits made after the 15th of each month will incur a penalty of{" "}
-                <span className="font-semibold">৳30 for every ৳1,000</span> deposited.
-              </p>
-              <p className="text-xs text-orange-700">
-                Example: ৳5,000 deposit after 15th = ৳150 penalty | ৳10,000 deposit after 15th = ৳300 penalty
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
+          isAfter15th() && <Alert className="mb-6 border-orange-200 bg-orange-50/50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <div className="space-y-2">
+                <p className="font-medium">⚠️ Late Payment Penalty Notice</p>
+                <p className="text-sm">
+                  Deposits made after the 15th of each month will incur a penalty of{" "}
+                  <span className="font-semibold">৳30 for every ৳1,000</span> deposited.
+                </p>
+                <p className="text-xs text-orange-700">
+                  Example: ৳5,000 deposit after 15th = ৳150 penalty | ৳10,000 deposit after 15th = ৳300 penalty
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
         }
-        
+
 
         {/* Current Date Warning */}
         {isAfter15th() && (
@@ -248,9 +310,8 @@ export function DepositForm() {
                   required: "Amount is required",
                   min: { value: 1, message: "Amount must be greater than 0" },
                 })}
-                className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                  errors.amount ? "border-red-400" : ""
-                }`}
+                className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.amount ? "border-red-400" : ""
+                  }`}
               />
               {errors.amount && <p className="text-xs text-red-600">{errors.amount.message}</p>}
               {watchedAmount && (
@@ -367,11 +428,10 @@ export function DepositForm() {
                         key={method.value}
                         type="button"
                         onClick={() => field.onChange(method.value)}
-                        className={`p-3 rounded-xl border-2 transition-all duration-300 ${
-                          field.value === method.value
-                            ? "border-blue-400 bg-blue-50/50"
-                            : "border-white/30 bg-white/50 hover:border-blue-200"
-                        }`}
+                        className={`p-3 rounded-xl border-2 transition-all duration-300 ${field.value === method.value
+                          ? "border-blue-400 bg-blue-50/50"
+                          : "border-white/30 bg-white/50 hover:border-blue-200"
+                          }`}
                       >
                         <div className="flex flex-col items-center gap-2">
                           <Icon className={`h-6 w-6 ${method.color}`} />
@@ -398,9 +458,8 @@ export function DepositForm() {
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 rounded-xl ${
-                      errors.referencePerson ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 rounded-xl ${errors.referencePerson ? "border-red-400" : ""
+                      }`}
                   >
                     <User className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Select reference person" />
@@ -437,9 +496,8 @@ export function DepositForm() {
                     {...register("receiverName", {
                       required: watchedPaymentMethod === "hand-to-hand" ? "Receiver name is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.receiverName ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.receiverName ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.receiverName && <p className="text-xs text-red-600">{errors.receiverName.message}</p>}
                 </div>
@@ -454,9 +512,8 @@ export function DepositForm() {
                     {...register("location", {
                       required: watchedPaymentMethod === "hand-to-hand" ? "Location is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.location ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.location ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.location && <p className="text-xs text-red-600">{errors.location.message}</p>}
                 </div>
@@ -471,9 +528,8 @@ export function DepositForm() {
                     {...register("date", {
                       required: watchedPaymentMethod === "hand-to-hand" ? "Date is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.date ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.date ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.date && <p className="text-xs text-red-600">{errors.date.message}</p>}
                 </div>
@@ -488,9 +544,8 @@ export function DepositForm() {
                     {...register("time", {
                       required: watchedPaymentMethod === "hand-to-hand" ? "Time is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.time ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.time ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.time && <p className="text-xs text-red-600">{errors.time.message}</p>}
                 </div>
@@ -518,9 +573,8 @@ export function DepositForm() {
                         ? "Phone number is required"
                         : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.phoneNumber ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.phoneNumber ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.phoneNumber && <p className="text-xs text-red-600">{errors.phoneNumber.message}</p>}
                 </div>
@@ -537,9 +591,8 @@ export function DepositForm() {
                         ? "Transaction ID is required"
                         : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.transactionId ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.transactionId ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.transactionId && <p className="text-xs text-red-600">{errors.transactionId.message}</p>}
                 </div>
@@ -565,9 +618,8 @@ export function DepositForm() {
                     {...register("bankHolderName", {
                       required: watchedPaymentMethod === "bank" ? "Bank holder name is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.bankHolderName ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.bankHolderName ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.bankHolderName && <p className="text-xs text-red-600">{errors.bankHolderName.message}</p>}
                 </div>
@@ -582,9 +634,8 @@ export function DepositForm() {
                     {...register("accountNumber", {
                       required: watchedPaymentMethod === "bank" ? "Account number is required" : false,
                     })}
-                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${
-                      errors.accountNumber ? "border-red-400" : ""
-                    }`}
+                    className={`bg-white/70 border-white/30 focus:bg-white focus:border-blue-400 transition-all duration-300 rounded-xl ${errors.accountNumber ? "border-red-400" : ""
+                      }`}
                   />
                   {errors.accountNumber && <p className="text-xs text-red-600">{errors.accountNumber.message}</p>}
                 </div>
@@ -598,13 +649,12 @@ export function DepositForm() {
 
             <div className="relative">
               <div
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${
-                  errors.proofImage
-                    ? "border-red-400 bg-red-50/50"
-                    : watchedProofImage && watchedProofImage.length > 0
-                      ? "border-green-400 bg-green-50/50"
-                      : "border-blue-300 bg-blue-50/50 hover:border-blue-400"
-                }`}
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${errors.proofImage
+                  ? "border-red-400 bg-red-50/50"
+                  : watchedProofImage && watchedProofImage.length > 0
+                    ? "border-green-400 bg-green-50/50"
+                    : "border-blue-300 bg-blue-50/50 hover:border-blue-400"
+                  }`}
               >
                 {/* Image Preview Overlay */}
                 {imagePreview && (
