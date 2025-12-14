@@ -5,6 +5,7 @@ type TUsers = {
   id: string;
   email: string;
   role: string;
+  status?: string;
   iat: number;
   exp: number;
 };
@@ -33,7 +34,7 @@ const authSlice = createSlice({
       }
     },
     logOut: (state) => {
-      state.token = null; 
+      state.token = null;
       state.user = null;
       state.refreshToken = null;
     },

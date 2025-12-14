@@ -48,6 +48,7 @@ import {
   User,
   Download,
   Loader2,
+  Upload,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -57,6 +58,7 @@ import {
   useRejectUserRequestMutation,
   UserRequestDto
 } from "@/redux/api/user-management/userRequestApi"
+import { ImportUserDialog } from "@/components/import/ImportUserDialog"
 
 const statusOptions = ["All", "PENDING", "ACTIVE", "REJECTED"]
 const accountTypeOptions = ["All", "Premium", "Standard", "Basic"]
@@ -73,6 +75,7 @@ export function AdminUserRequestPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedAction, setSelectedAction] = useState<{ type: ActionType; request: UserRequestDto } | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
   const itemsPerPage = 10
 
@@ -209,6 +212,11 @@ export function AdminUserRequestPage() {
     }
   }
 
+  const handleImportComplete = () => {
+    // Refetch the user requests after successful import
+    refetch()
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -218,6 +226,15 @@ export function AdminUserRequestPage() {
           <p className="text-gray-600">Review and manage new user registration requests</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="rounded-xl gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600"
+            onClick={() => setIsImportDialogOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Import Users
+          </Button>
           <Button variant="outline" size="sm" className="rounded-xl">
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -1012,68 +1029,55 @@ export function AdminUserRequestPage() {
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog for Approval */}
-      <AlertDialog
-        open={!!selectedAction && selectedAction.type === "approve"}
-        onOpenChange={() => setSelectedAction(null)}
-      >
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={!!selectedAction} onOpenChange={() => setSelectedAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Registration Request</AlertDialogTitle>
+            <AlertDialogTitle>
+              {selectedAction?.type === "approve" ? "Approve Registration Request" : "Reject Registration Request"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to approve the registration request for{" "}
-              <strong>{selectedAction?.request.name}</strong>? This will create a new member account and assign a member
-              ID.
+              {selectedAction?.type === "approve"
+                ? `Are you sure you want to approve the registration request for ${selectedAction?.request.name}? This will create a new member account and assign a member ID.`
+                : `Are you sure you want to reject the registration request for ${selectedAction?.request.name}? Please provide a reason for rejection.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {selectedAction?.type === "reject" && (
+            <div className="py-4">
+              <Textarea
+                placeholder="Enter reason for rejection..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isApproving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isApproving || isRejecting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmAction}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={isApproving}
+              className={selectedAction?.type === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              disabled={isApproving || isRejecting || (selectedAction?.type === "reject" && !rejectionReason.trim())}
             >
-              {isApproving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isApproving ? "Approving..." : "Approve Request"}
+              {(isApproving || isRejecting) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {selectedAction?.type === "approve"
+                ? isApproving
+                  ? "Approving..."
+                  : "Approve Request"
+                : isRejecting
+                  ? "Rejecting..."
+                  : "Reject Request"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirmation Dialog for Rejection */}
-      <AlertDialog
-        open={!!selectedAction && selectedAction.type === "reject"}
-        onOpenChange={() => setSelectedAction(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reject Registration Request</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to reject the registration request for{" "}
-              <strong>{selectedAction?.request.name}</strong>? Please provide a reason for rejection.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Enter reason for rejection..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRejecting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmAction}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={!rejectionReason.trim() || isRejecting}
-            >
-              {isRejecting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isRejecting ? "Rejecting..." : "Reject Request"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Import Dialog */}
+      <ImportUserDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   )
 }
