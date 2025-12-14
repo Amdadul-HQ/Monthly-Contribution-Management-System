@@ -4,13 +4,14 @@ import { RootState } from "../store";
 import { logOut, setUser } from "../userSlice/userSlice";
 import { toast } from "sonner";
 import { TResponse } from "../type/apiType";
+import Cookies from "js-cookie";
 
 const baseQuery = fetchBaseQuery({
   // Fallback to local API if env is missing
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/ts",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState)?.auth?.token;
+    const token = (getState() as RootState)?.auth?.token || Cookies.get("accessToken");
     if (token) {
       headers.set("authorization", `bearer ${token}`);
     }
@@ -28,7 +29,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, BaseQueryApi, Definition
   if (result?.error?.status === 401) {
     // * send Refresh token
     const state = api.getState() as RootState;
-    const refreshToken = (state.auth as any)?.refreshToken;
+    const refreshToken = (state.auth as any)?.refreshToken || Cookies.get("refreshToken");
 
     if (!refreshToken) {
       api.dispatch(logOut());
@@ -57,6 +58,10 @@ const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, BaseQueryApi, Definition
         refreshToken: data.data.refreshToken || refreshToken
       }));
 
+      // Update cookie with new token if needed
+      Cookies.set("accessToken", data.data.token, { expires: 7 });
+
+      // Retry the original query
       result = await baseQuery(args, api, extraOption) as TResponse<object>
     }
     else {

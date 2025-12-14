@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 import { toast } from "sonner"
 import { useCreateDepositMutation } from "@/redux/api/deposit/depositApi"
-import { useUploadDocumentMutation } from "@/redux/api/document/documentApi"
+import { useUploadDocumentMutation, useDeleteDocumentMutation } from "@/redux/api/document/documentApi"
 
 type PaymentMethod = "hand-to-hand" | "bkash" | "nagad" | "rocket" | "bank"
 type ReferencePersons = "Afran Sojib" | "Xhamix Shuvo"
@@ -61,7 +61,8 @@ interface FormData {
   accountNumber: string
   // Common fields
   notes: string
-  proofImage: FileList | null
+  proofImage: string
+  proofImagePublicId: string
 }
 
 export function DepositForm() {
@@ -72,6 +73,10 @@ export function DepositForm() {
   // Redux mutations
   const [createDeposit, { isLoading: isCreatingDeposit }] = useCreateDepositMutation()
   const [uploadDocument, { isLoading: isUploadingDocument }] = useUploadDocumentMutation()
+  const [deleteDocument, { isLoading: isDeletingDocument }] = useDeleteDocumentMutation()
+
+  // Local state for upload status
+  const [isUploading, setIsUploading] = useState(false)
 
   const {
     register,
@@ -96,7 +101,8 @@ export function DepositForm() {
       bankHolderName: "",
       accountNumber: "",
       notes: "",
-      proofImage: null,
+      proofImage: "",
+      proofImagePublicId: "",
     },
   })
 
@@ -120,28 +126,65 @@ export function DepositForm() {
     return today.getDate() > 15
   }
 
-  // Handle image preview
-  useEffect(() => {
-    if (watchedProofImage && watchedProofImage.length > 0) {
-      const file = watchedProofImage[0]
-      if (!file) {
-        return
-      }
-      const previewUrl = URL.createObjectURL(file)
-      setImagePreview(previewUrl)
+  // Handle image selection and instant upload
+  const handleImageSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-      return () => {
-        URL.revokeObjectURL(previewUrl)
+    // Show local preview immediately
+    const previewUrl = URL.createObjectURL(file)
+    setImagePreview(previewUrl)
+    setIsUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "deposit-proofs")
+
+      const uploadResult = await uploadDocument(formData).unwrap()
+
+      console.log(uploadResult)
+
+      if (uploadResult.success && uploadResult.data) {
+        setValue("proofImage", uploadResult.data.secureUrl, { shouldValidate: true, shouldDirty: true })
+        setValue("proofImagePublicId", uploadResult.data.publicId)
+        toast.success("Image uploaded successfully")
       }
-    } else {
+    } catch (error) {
+      console.error("Upload failed:", error)
+      toast.error("Failed to upload image")
       setImagePreview(null)
+      // Reset local preview if upload fails
+    } finally {
+      setIsUploading(false)
+      // Clear input value so same file can be selected again if needed
+      e.target.value = ''
     }
-  }, [watchedProofImage])
+  }
+
+  const removeImage = async () => {
+    const publicId = watch("proofImagePublicId")
+
+    if (publicId) {
+      try {
+        await deleteDocument(publicId).unwrap()
+        toast.success("Image removed successfully")
+      } catch (error) {
+        console.error("Delete failed:", error)
+        toast.error("Failed to delete image from server")
+        // We still remove it locally even if server delete fails
+      }
+    }
+
+    setValue("proofImage", "", { shouldValidate: true, shouldDirty: true })
+    setValue("proofImagePublicId", "")
+    setImagePreview(null)
+  }
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (imagePreview) {
+      if (imagePreview && !imagePreview.startsWith('http')) {
         URL.revokeObjectURL(imagePreview)
       }
     }
@@ -152,19 +195,9 @@ export function DepositForm() {
     setSubmitStatus("idle")
 
     try {
-      let proofImageUrl = ""
-
-      // Step 1: Upload payment proof image if provided
-      if (data.proofImage && data.proofImage.length > 0) {
-        const file = data.proofImage[0]
-        if (file) {
-          const formData = new FormData()
-          formData.append("file", file)
-          formData.append("folder", "deposit-proofs")
-
-          const uploadResult = await uploadDocument(formData).unwrap()
-          proofImageUrl = uploadResult.data.secureUrl
-        }
+      if (!data.proofImage) {
+        toast.error("Please upload a payment proof image")
+        return
       }
 
       // Step 2: Map payment method to backend enum
@@ -182,7 +215,7 @@ export function DepositForm() {
         depositAmount: Number.parseFloat(data.amount),
         paymentMethod: paymentMethodMap[data.paymentMethod as PaymentMethod],
         referencePerson: data.referencePerson,
-        proofImage: proofImageUrl,
+        proofImage: data.proofImage, // Use the uploaded URL directly
         notes: data.notes || undefined,
       }
 
@@ -241,14 +274,6 @@ export function DepositForm() {
     if (!methodConfig) return null
     const Icon = methodConfig.icon
     return <Icon className={`h-4 w-4 ${methodConfig.color}`} />
-  }
-
-  const removeImage = () => {
-    setValue("proofImage", null)
-    setImagePreview(null)
-    // Reset file input
-    const fileInput = document.getElementById("proofImage") as HTMLInputElement
-    if (fileInput) fileInput.value = ""
   }
 
   return (
@@ -648,10 +673,16 @@ export function DepositForm() {
             <Label className="text-sm font-medium text-gray-700">Payment Proof *</Label>
 
             <div className="relative">
+              {/* Hidden input for validation */}
+              <input
+                type="hidden"
+                {...register("proofImage", { required: "Proof image is required" })}
+              />
+
               <div
                 className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${errors.proofImage
                   ? "border-red-400 bg-red-50/50"
-                  : watchedProofImage && watchedProofImage.length > 0
+                  : watchedProofImage
                     ? "border-green-400 bg-green-50/50"
                     : "border-blue-300 bg-blue-50/50 hover:border-blue-400"
                   }`}
@@ -666,53 +697,53 @@ export function DepositForm() {
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                       <div className="text-white text-center">
-                        <CheckCircle className="h-8 w-8 mx-auto mb-2" />
-                        <p className="font-medium">Image Selected</p>
-                        <p className="text-sm opacity-90">Click to change</p>
+                        {isUploading ? (
+                          <div className="flex flex-col items-center">
+                            <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin mb-2"></div>
+                            <p className="font-medium">Uploading...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-8 w-8 mx-auto mb-2" />
+                            <p className="font-medium">Image Uploaded</p>
+                            <p className="text-sm opacity-90">Ready to submit</p>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
-                      onClick={removeImage}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {!isUploading && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                        onClick={removeImage}
+                        disabled={isDeletingDocument}
+                      >
+                        {isDeletingDocument ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <X className="h-4 w-4" />}
+                      </Button>
+                    )}
                   </div>
                 )}
 
                 <input
                   type="file"
                   accept="image/*"
-                  {...register("proofImage", {
-                    required: "Proof image is required",
-                  })}
+                  onChange={handleImageSelection}
                   className="hidden"
-                  id="proofImage"
+                  id="proofImageInput"
+                  disabled={isUploading}
                 />
-                <label htmlFor="proofImage" className="cursor-pointer block">
+                <label htmlFor="proofImageInput" className={`cursor-pointer block ${imagePreview ? 'pointer-events-none opacity-0' : ''}`}>
                   <div className="flex flex-col items-center gap-3">
-                    {watchedProofImage && watchedProofImage.length > 0 ? (
-                      <>
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-800">Image Selected</p>
-                          <p className="text-sm text-green-600">{watchedProofImage[0]?.name}</p>
-                          <p className="text-xs text-gray-500 mt-1">Click to change image</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="h-8 w-8 text-blue-600" />
-                        <div>
-                          <p className="font-medium text-gray-900">Upload Payment Proof</p>
-                          <p className="text-sm text-gray-600">Click to select image or take photo</p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                        </div>
-                      </>
-                    )}
+                    <>
+                      <Camera className="h-8 w-8 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Upload Payment Proof</p>
+                        <p className="text-sm text-gray-600">Click to select image or take photo</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                      </div>
+                    </>
                   </div>
                 </label>
               </div>
