@@ -1,10 +1,12 @@
 "use client"
 
-
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@workspace/ui/components/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@workspace/ui/components/dialog"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import {
   User,
   Mail,
@@ -20,49 +22,21 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  Loader2,
+  Save,
 } from "lucide-react"
-
-// Mock profile data - replace with your actual data
-const profileData = {
-  personalInfo: {
-    name: "Mohammad Rahman",
-    email: "mohammad.rahman@email.com",
-    phone: "+880 1712-345678",
-    profileImage: "/placeholder.svg?height=100&width=100",
-    memberId: "BDT-2024-001234",
-    joinDate: "2024-01-15",
-    address: "Dhaka, Bangladesh",
-    nidNumber: "1234567890123",
-    occupation: "Software Engineer",
-    emergencyContact: "+880 1798-765432",
-  },
-  accountInfo: {
-    accountStatus: "Active",
-    accountType: "Premium",
-    totalDeposited: 125000,
-    currentBalance: 125000,
-    totalPenalties: 2500,
-    nextPaymentDue: "2024-10-15",
-    monthlyAmount: 16000,
-    paymentStreak: 8,
-    onTimePaymentRate: 85,
-  },
-  preferences: {
-    preferredPaymentMethod: "bKash",
-    notificationsEnabled: true,
-    emailAlerts: true,
-    smsAlerts: false,
-    language: "English",
-  },
-  statistics: {
-    monthsAsMember: 9,
-    totalTransactions: 24,
-    averageMonthlyDeposit: 13889,
-    lastLoginDate: "2024-09-20",
-  },
-}
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/redux/api/user-management/userApi"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+import { useForm } from "react-hook-form"
 
 export function ProfilePage() {
+  const { data: response, isLoading, refetch } = useGetProfileQuery()
+  const profileData = response?.data
+
+  // Modal state
+  const [isEditOpen, setIsEditOpen] = useState(false)
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
       style: "currency",
@@ -71,20 +45,8 @@ export function ProfilePage() {
     }).format(amount)
   }
 
-  const calculateMembershipDuration = (joinDate: string) => {
-    const join = new Date(joinDate)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - join.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    const months = Math.floor(diffDays / 30)
-    const days = diffDays % 30
-    return { months, days, totalDays: diffDays }
-  }
-
-  const membershipDuration = calculateMembershipDuration(profileData.personalInfo.joinDate)
-
   const getAccountStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case "active":
         return "bg-green-100 text-green-800 border-green-200"
       case "inactive":
@@ -97,7 +59,7 @@ export function ProfilePage() {
   }
 
   const getAccountTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
+    switch (type?.toLowerCase()) {
       case "premium":
         return "bg-purple-100 text-purple-800 border-purple-200"
       case "standard":
@@ -107,6 +69,22 @@ export function ProfilePage() {
       default:
         return "bg-blue-100 text-blue-800 border-blue-200"
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (!profileData) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        Failed to load profile data.
+      </div>
+    )
   }
 
   return (
@@ -149,7 +127,7 @@ export function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {membershipDuration.months} months, {membershipDuration.days} days
+                    {profileData.statistics.monthsAsMember} months active
                   </span>
                 </div>
               </div>
@@ -160,16 +138,10 @@ export function ProfilePage() {
                 variant="secondary"
                 size="sm"
                 className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                onClick={() => setIsEditOpen(true)}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-              >
-                <Settings className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -382,6 +354,96 @@ export function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <EditProfileDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        initialData={profileData.personalInfo}
+        refetch={refetch}
+      />
     </div>
+  )
+}
+
+function EditProfileDialog({
+  open,
+  onOpenChange,
+  initialData,
+  refetch
+}: {
+  open: boolean,
+  onOpenChange: (open: boolean) => void,
+  initialData: any,
+  refetch: () => void
+}) {
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation()
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: {
+      name: initialData.name,
+      phone: initialData.phone,
+      address: initialData.address,
+      occupation: initialData.occupation,
+    }
+  })
+
+  // Reset form when initialData changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      reset({
+        name: initialData.name,
+        phone: initialData.phone,
+        address: initialData.address,
+        occupation: initialData.occupation,
+      })
+    }
+  }, [open, initialData, reset])
+
+  const onSubmit = async (data: any) => {
+    try {
+      await updateProfile(data).unwrap()
+      toast.success("Profile updated successfully")
+      refetch()
+      onOpenChange(false)
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update profile")
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>
+            Make changes to your profile here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input id="name" {...register("name", { required: true })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" {...register("phone", { required: true })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input id="address" {...register("address")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="occupation">Occupation</Label>
+            <Input id="occupation" {...register("occupation")} />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
