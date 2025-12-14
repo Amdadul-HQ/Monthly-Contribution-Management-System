@@ -62,6 +62,52 @@ export interface UpdateUserProfileDto {
     joiningDate?: string;
 }
 
+export interface RecentDepositDto {
+    month: string;
+    amount: number;
+    date: string;
+    penalty: number;
+    isPenalized: boolean;
+    daysLate: number;
+}
+
+export interface MonthlyPaymentDto {
+    month: string;
+    amount: number;
+}
+
+export interface CurrentMonthStatusDto {
+    month: string;
+    amount: number;
+    isPaid: boolean;
+    paymentDate?: string;
+    daysLate: number;
+    penalty: number;
+}
+
+export interface SummaryStatsDto {
+    last5MonthsTotal: number;
+    averageMonthly: number;
+    recentDepositsCount: number;
+    monthsPaid: number;
+    latePaymentsCount: number;
+}
+
+export interface MemberOverviewDto {
+    totalReserved: number;
+    totalPenalty: number;
+    currentMonth: CurrentMonthStatusDto;
+    recentDeposits: RecentDepositDto[];
+    monthlyPayments: MonthlyPaymentDto[];
+    summaryStats: SummaryStatsDto;
+}
+
+export interface MemberOverviewApiResponse {
+    success: boolean;
+    message: string;
+    data: MemberOverviewDto;
+}
+
 export interface UserProfileApiResponse {
     success: boolean;
     message: string;
@@ -92,10 +138,20 @@ const userApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["user"],
         }),
+
+        // Get member overview dashboard functionality
+        getMemberOverview: builder.query<MemberOverviewApiResponse, void>({
+            query: () => ({
+                url: "/deposits/overview",
+                method: "GET",
+            }),
+            providesTags: ["user", "deposits"],
+        }),
     }),
 });
 
 export const {
     useGetProfileQuery,
     useUpdateProfileMutation,
+    useGetMemberOverviewQuery,
 } = userApi;
