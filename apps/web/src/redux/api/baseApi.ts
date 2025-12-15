@@ -19,7 +19,7 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, BaseQueryApi, DefinitionType> = async (args, api, extraOption): Promise<any> => {
+const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, any, DefinitionType> = async (args, api, extraOption): Promise<any> => {
   let result = await baseQuery(args, api, extraOption) as TResponse<object>;
 
   if (result?.error?.status === 404) {
@@ -75,6 +75,6 @@ const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, BaseQueryApi, Definition
 export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: baseQueryWithRefreshToken,
-  tagTypes: ["admins", "paywallControl", "PlanLimits", "logs", "notes", "users", "user", "coffeeShop", "flaggedContent", "pendingCafe", "duplicateCafe", "announcements", "notifications", "products", "ip", "deposits"],
+  tagTypes: ["admins", "admin", "paywallControl", "PlanLimits", "logs", "notes", "users", "user", "coffeeShop", "flaggedContent", "pendingCafe", "duplicateCafe", "announcements", "notifications", "products", "ip", "deposits"],
   endpoints: () => ({}),
 });

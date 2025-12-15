@@ -7,185 +7,21 @@ import {
   Target,
   AlertTriangle,
   TrendingUp,
-  CheckCircle,
-  UserPlus,
   CreditCard,
-  DollarSign,
   Activity,
   Award,
-  Download,
-  Filter,
-  RefreshCw,
   Smartphone,
   Building2,
   Banknote,
+  Loader2,
 } from "lucide-react"
 import { useState } from "react"
-import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Progress } from "@workspace/ui/components/progress"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@workspace/ui/components/chart"
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
-
-// Mock admin data - replace with your actual data
-const adminStats = {
-  totalAmount: 2450000, // Total deposits across all members
-  totalMembers: 156,
-  activeMembers: 142,
-  inactiveMembers: 14,
-  currentMonthTarget: 2500000,
-  currentMonthCollected: 1850000,
-  totalPenalties: 45000,
-  newMembersThisMonth: 8,
-  averageMonthlyDeposit: 15000,
-  collectionEfficiency: 74, // percentage
-}
-
-// Recent member payments
-const recentPayments = [
-  {
-    id: 1,
-    memberName: "Mohammad Rahman",
-    memberId: "BDT-2024-001234",
-    amount: 16000,
-    method: "bKash",
-    date: "2024-09-20",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 2,
-    memberName: "Fatima Khatun",
-    memberId: "BDT-2024-001235",
-    amount: 12000,
-    method: "Nagad",
-    date: "2024-09-19",
-    status: "Completed",
-    penalty: 360,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 3,
-    memberName: "Abdul Karim",
-    memberId: "BDT-2024-001236",
-    amount: 18000,
-    method: "Bank",
-    date: "2024-09-18",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 4,
-    memberName: "Rashida Begum",
-    memberId: "BDT-2024-001237",
-    amount: 15000,
-    method: "Hand to Hand",
-    date: "2024-09-17",
-    status: "Pending",
-    penalty: 450,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 5,
-    memberName: "Aminul Islam",
-    memberId: "BDT-2024-001238",
-    amount: 20000,
-    method: "bKash",
-    date: "2024-09-16",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 6,
-    memberName: "Salma Akter",
-    memberId: "BDT-2024-001239",
-    amount: 10000,
-    method: "Rocket",
-    date: "2024-09-15",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 7,
-    memberName: "Rafiqul Hasan",
-    memberId: "BDT-2024-001240",
-    amount: 14000,
-    method: "Nagad",
-    date: "2024-09-14",
-    status: "Completed",
-    penalty: 420,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 8,
-    memberName: "Nasreen Sultana",
-    memberId: "BDT-2024-001241",
-    amount: 16000,
-    method: "Bank",
-    date: "2024-09-13",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 9,
-    memberName: "Mizanur Rahman",
-    memberId: "BDT-2024-001242",
-    amount: 13000,
-    method: "bKash",
-    date: "2024-09-12",
-    status: "Completed",
-    penalty: 390,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 10,
-    memberName: "Ruma Khatun",
-    memberId: "BDT-2024-001243",
-    amount: 17000,
-    method: "Hand to Hand",
-    date: "2024-09-11",
-    status: "Completed",
-    penalty: 0,
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-]
-
-// Monthly collection data
-const monthlyCollections = [
-  { month: "Jan", amount: 1800000, target: 2000000, members: 120 },
-  { month: "Feb", amount: 2100000, target: 2100000, members: 125 },
-  { month: "Mar", amount: 1950000, target: 2200000, members: 128 },
-  { month: "Apr", amount: 2300000, target: 2300000, members: 132 },
-  { month: "May", amount: 2150000, target: 2400000, members: 135 },
-  { month: "Jun", amount: 2450000, target: 2400000, members: 140 },
-  { month: "Jul", amount: 2200000, target: 2450000, members: 145 },
-  { month: "Aug", amount: 2350000, target: 2500000, members: 150 },
-  { month: "Sep", amount: 1850000, target: 2500000, members: 156 },
-]
-
-// Payment method distribution
-const paymentMethodData = [
-  { name: "bKash", value: 35, color: "#E91E63" },
-  { name: "Nagad", value: 25, color: "#FF9800" },
-  { name: "Bank", value: 20, color: "#2196F3" },
-  { name: "Hand to Hand", value: 15, color: "#4CAF50" },
-  { name: "Rocket", value: 5, color: "#9C27B0" },
-]
-
-// Top contributors
-const topContributors = [
-  { name: "Mohammad Rahman", totalDeposited: 180000, months: 12, avgMonthly: 15000 },
-  { name: "Abdul Karim", totalDeposited: 216000, months: 12, avgMonthly: 18000 },
-  { name: "Fatima Khatun", totalDeposited: 144000, months: 12, avgMonthly: 12000 },
-  { name: "Aminul Islam", totalDeposited: 240000, months: 12, avgMonthly: 20000 },
-  { name: "Rashida Begum", totalDeposited: 180000, months: 12, avgMonthly: 15000 },
-]
+import { useGetAdminOverviewQuery } from "@/redux/api/admin/adminApi"
 
 const chartConfig = {
   amount: {
@@ -199,7 +35,34 @@ const chartConfig = {
 }
 
 export function AdminOverviewPage() {
+  const { data, isLoading } = useGetAdminOverviewQuery()
   const [selectedPeriod, setSelectedPeriod] = useState("current-month")
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  const adminStats = data?.stats || {
+    totalAmount: 0,
+    totalMembers: 0,
+    activeMembers: 0,
+    inactiveMembers: 0,
+    currentMonthTarget: 0,
+    currentMonthCollected: 0,
+    totalPenalties: 0,
+    newMembersThisMonth: 0,
+    averageMonthlyDeposit: 0,
+    collectionEfficiency: 0,
+  }
+
+  const recentPayments = data?.recentPayments || []
+  const monthlyCollections = data?.monthlyCollections || []
+  const paymentMethodData = data?.paymentMethodDistribution || []
+  const topContributors = data?.topContributors || []
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -215,11 +78,13 @@ export function AdminOverviewPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
+      case "approved":
       case "completed":
         return "bg-green-100 text-green-800 border-green-200"
       case "pending":
         return "bg-orange-100 text-orange-800 border-orange-200"
       case "failed":
+      case "rejected":
         return "bg-red-100 text-red-800 border-red-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
@@ -254,7 +119,10 @@ export function AdminOverviewPage() {
     }
   }
 
-  const collectionProgress = (adminStats.currentMonthCollected / adminStats.currentMonthTarget) * 100
+  // Calculate collection progress safely
+  const collectionProgress = adminStats.currentMonthTarget > 0
+    ? (adminStats.currentMonthCollected / adminStats.currentMonthTarget) * 100
+    : 0
 
   return (
     <div className="space-y-6">
@@ -334,7 +202,7 @@ export function AdminOverviewPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900">
             <Target className="h-5 w-5 text-blue-600" />
-            September 2024 Collection Progress
+            Current Month Collection Progress
           </CardTitle>
           <CardDescription className="text-gray-700">Current month target vs actual collection</CardDescription>
         </CardHeader>
@@ -354,7 +222,7 @@ export function AdminOverviewPage() {
             </div>
             <div className="bg-red-50/50 rounded-xl p-4 border border-red-100/50">
               <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(adminStats.currentMonthTarget - adminStats.currentMonthCollected)}
+                {formatCurrency(Math.max(0, adminStats.currentMonthTarget - adminStats.currentMonthCollected))}
               </div>
               <div className="text-sm text-gray-700">Remaining</div>
             </div>
@@ -386,7 +254,7 @@ export function AdminOverviewPage() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: "#6B7280", fontSize: 12 }}
-                    tickFormatter={(value) => `${value / 1000000}M`}
+                    tickFormatter={(value) => `${value / 1000}k`}
                   />
                   <ChartTooltip
                     content={
@@ -395,7 +263,7 @@ export function AdminOverviewPage() {
                           formatCurrency(value as number),
                           name === "amount" ? "Collected" : "Target",
                         ]}
-                        labelFormatter={(label) => `${label} 2024`}
+                        labelFormatter={(label) => `${label}`}
                         className="bg-white/90 backdrop-blur-sm text-black border-blue-200"
                       />
                     }
@@ -482,161 +350,159 @@ export function AdminOverviewPage() {
 
       <div className="lg:flex gap-5 lg:space-y-0 space-y-5">
 
-              {/* Recent Member Payments */}
-      <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-900">
-            <Activity className="h-5 w-5 text-blue-600" />
-            Recent Member Payments
-          </CardTitle>
-          <CardDescription className="text-gray-700">Latest 10 member deposit transactions</CardDescription>
-        </CardHeader>
-        <CardContent className="px-2">
-          {/* Mobile Card View */}
-          <div className="block md:hidden space-y-4">
-            {recentPayments.map((payment) => (
-              <Card
-                key={payment.id}
-                className={`${
-                  payment.penalty > 0 ? "bg-red-50/50 border-red-200/50" : "bg-blue-50/50 border-blue-100/50"
-                } backdrop-blur-sm shadow-sm`}
-              >
-                <CardContent className="space-y-3">
-                  {/* Header with Member Info and Status */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={payment.avatar || "/placeholder.svg"} alt={payment.memberName} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {payment.memberName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{payment.memberName}</h3>
-                        <Badge className={`${getStatusColor(payment.status)} text-xs`}>{payment.status}</Badge>
+        {/* Recent Member Payments */}
+        <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Activity className="h-5 w-5 text-blue-600" />
+              Recent Member Payments
+            </CardTitle>
+            <CardDescription className="text-gray-700">Latest 10 member deposit transactions</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2">
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-4">
+              {recentPayments.map((payment) => (
+                <Card
+                  key={payment.id}
+                  className={`${payment.penalty > 0 ? "bg-red-50/50 border-red-200/50" : "bg-blue-50/50 border-blue-100/50"
+                    } backdrop-blur-sm shadow-sm`}
+                >
+                  <CardContent className="space-y-3">
+                    {/* Header with Member Info and Status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={"/placeholder.svg"} alt={payment.memberName} />
+                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                            {payment.memberName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{payment.memberName}</h3>
+                          <Badge className={`${getStatusColor(payment.status)} text-xs`}>{payment.status}</Badge>
+                        </div>
                       </div>
-                    </div>
-                    {/*  */}
 
-                  <div>
-                    {/* Amount */}
-                    <div className="text-xl font-bold text-blue-600">{formatCurrency(payment.amount)}</div>
-                    {/* Payment Method */}
-                    <div className="flex items-center gap-2">
+                    </div>
+
+                    <div>
+                      {/* Amount */}
+                      <div className="text-xl font-bold text-blue-600">{formatCurrency(payment.amount)}</div>
+                      {/* Payment Method */}
+                      <div className="flex items-center gap-2 mt-1">
                         {getPaymentMethodIcon(payment.method)}
                         <Badge className={`${getPaymentMethodColor(payment.method)} text-xs`}>{payment.method}</Badge>
-                    </div>
-                    </div>
-                  </div>
-
-                  {/* Date */}
-                  <div className="bg-gray-50 rounded-lg flex items-center gap-x-1">
-                    <div className="text-xs text-gray-600 font-semibold">Payment Date:</div>
-                    <div className="text-sm text-gray-900">{new Date(payment.date).toLocaleDateString("en-BD")}</div>
-                  </div>
-
-                  {/* Penalty */}
-                  {payment.penalty > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <span className="text-sm font-medium text-red-800">Penalty Applied</span>
-                        </div>
-                        <span className="font-semibold text-red-600">{formatCurrency(payment.penalty)}</span>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
 
-          {/* Desktop List View */}
-          <div className="hidden md:block space-y-4">
-            {recentPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="flex items-center justify-between p-4 bg-blue-50/50 rounded-xl border border-blue-100/50 hover:bg-blue-50/70 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={payment.avatar || "/placeholder.svg"} alt={payment.memberName} />
-                    <AvatarFallback className="bg-blue-100 text-blue-600">
-                      {payment.memberName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-gray-900">{payment.memberName}</p>
-                    <p className="text-sm text-gray-600">{payment.memberId}</p>
-                  </div>
-                </div>
+                    {/* Date */}
+                    <div className="bg-gray-50 rounded-lg flex items-center gap-x-1 p-2">
+                      <div className="text-xs text-gray-600 font-semibold">Payment Date:</div>
+                      <div className="text-sm text-gray-900">{new Date(payment.date).toLocaleDateString("en-BD")}</div>
+                    </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-blue-600">{formatCurrency(payment.amount)}</p>
+                    {/* Penalty */}
                     {payment.penalty > 0 && (
-                      <p className="text-xs text-red-600">Penalty: {formatCurrency(payment.penalty)}</p>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            <span className="text-sm font-medium text-red-800">Penalty Applied</span>
+                          </div>
+                          <span className="font-semibold text-red-600">{formatCurrency(payment.penalty)}</span>
+                        </div>
+                      </div>
                     )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Desktop List View */}
+            <div className="hidden md:block space-y-4">
+              {recentPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-4 bg-blue-50/50 rounded-xl border border-blue-100/50 hover:bg-blue-50/70 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={"/placeholder.svg"} alt={payment.memberName} />
+                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                        {payment.memberName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-gray-900">{payment.memberName}</p>
+                      <p className="text-sm text-gray-600">{payment.memberId}</p>
+                    </div>
                   </div>
 
-                  <Badge className={`${getPaymentMethodColor(payment.method)} text-xs`}>{payment.method}</Badge>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-semibold text-blue-600">{formatCurrency(payment.amount)}</p>
+                      {payment.penalty > 0 && (
+                        <p className="text-xs text-red-600">Penalty: {formatCurrency(payment.penalty)}</p>
+                      )}
+                    </div>
 
-                  <Badge className={`${getStatusColor(payment.status)} text-xs`}>{payment.status}</Badge>
+                    <Badge className={`${getPaymentMethodColor(payment.method)} text-xs`}>{payment.method}</Badge>
 
+                    <Badge className={`${getStatusColor(payment.status)} text-xs`}>{payment.status}</Badge>
+
+                    <div className="text-right">
+                      <p className="text-sm text-gray-900">{new Date(payment.date).toLocaleDateString("en-BD")}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Contributors */}
+        <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Award className="h-5 w-5 text-blue-600" />
+              Top Contributors
+            </CardTitle>
+            <CardDescription className="text-gray-700">Members with highest total deposits</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2">
+            <div className="space-y-3">
+              {topContributors.map((contributor, index) => (
+                <div
+                  key={contributor.name}
+                  className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-xl border border-blue-100/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{contributor.name}</p>
+                      <p className="text-sm text-gray-600">{contributor.months} months active</p>
+                    </div>
+                  </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-900">{new Date(payment.date).toLocaleDateString("en-BD")}</p>
+                    <p className="font-semibold text-blue-600">{formatCurrency(contributor.totalDeposited)}</p>
+                    <p className="text-sm text-gray-600">Avg: {formatCurrency(contributor.avgMonthly)}/month</p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Top Contributors */}
-      <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg w-full h-fit">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-900">
-            <Award className="h-5 w-5 text-blue-600" />
-            Top Contributors
-          </CardTitle>
-          <CardDescription className="text-gray-700">Members with highest total deposits</CardDescription>
-        </CardHeader>
-        <CardContent className="px-2">
-          <div className="space-y-3">
-            {topContributors.map((contributor, index) => (
-              <div
-                key={contributor.name}
-                className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-xl border border-blue-100/50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{contributor.name}</p>
-                    <p className="text-sm text-gray-600">{contributor.months} months active</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-blue-600">{formatCurrency(contributor.totalDeposited)}</p>
-                  <p className="text-sm text-gray-600">Avg: {formatCurrency(contributor.avgMonthly)}/month</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
       </div>
     </div>
   )
 }
-
