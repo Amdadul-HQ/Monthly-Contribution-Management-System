@@ -45,3 +45,9 @@ export async function loginAction(formData: {
     return { success: false, message: error.message };
   }
 }
+
+export async function logoutAction() {
+  const cookieStore = cookies();
+  (await cookieStore).delete('accessToken');
+  return { success: true };
+}

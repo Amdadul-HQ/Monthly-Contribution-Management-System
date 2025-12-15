@@ -12,7 +12,7 @@ const roleBasedPrivateRoutes = {
 }
 
 const roleDashboardPaths = {
-  USER: "/dashboard",
+  USER: "/dashboard/member",
   ADMIN: "/dashboard/admin",
 }
 

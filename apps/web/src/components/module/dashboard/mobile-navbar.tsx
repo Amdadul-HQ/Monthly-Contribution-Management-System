@@ -1,9 +1,10 @@
 "use client"
 
 import { cn } from "@workspace/ui/lib/utils"
-import { History, BarChart3, User, UserCog, UserPlus, Wallet } from "lucide-react"
+import { History, BarChart3, User, UserCog, UserPlus, Wallet, LogOut } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useUser } from "@/context/UserContext"
 
 interface MobileBottomNavProps {
   userType: "member" | "admin"
@@ -21,7 +22,12 @@ const memberNavItems = [
     icon: BarChart3,
   },
   {
-    title: "Deposit History",
+    title: "Deposit",
+    url: "/dashboard/member/deposit",
+    icon: Wallet,
+  },
+  {
+    title: "History",
     url: "/dashboard/member/deposit-history",
     icon: History,
   },
@@ -58,13 +64,14 @@ const adminNavItems = [
 export function MobileBottomNav({ userType }: MobileBottomNavProps) {
   const pathname = usePathname()
   const navItems = userType === "member" ? memberNavItems : adminNavItems
+  const { logout } = useUser()
 
   return (
     <div className="md:hidden">
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border">
         <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
-          {navItems.map((item: any) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.url
 
             return (
@@ -77,8 +84,6 @@ export function MobileBottomNav({ userType }: MobileBottomNavProps) {
                   "hover:scale-105 active:scale-95",
                 )}
               >
-
-                {/* // Regular nav items */}
                 <div className="flex flex-col items-center justify-center space-y-1">
                   <div
                     className={cn(
@@ -102,6 +107,34 @@ export function MobileBottomNav({ userType }: MobileBottomNavProps) {
               </Link>
             )
           })}
+
+          {/* Logout Button */}
+          <button
+            onClick={logout}
+            className={cn(
+              "flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1",
+              "transition-all duration-300 ease-in-out",
+              "hover:scale-105 active:scale-95",
+              "text-muted-foreground hover:text-red-500"
+            )}
+          >
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <div
+                className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-lg",
+                  "transition-all duration-300 ease-in-out",
+                  "hover:bg-red-50"
+                )}
+              >
+                <LogOut className="w-5 h-5" />
+              </div>
+              <span
+                className="text-xs font-medium transition-colors duration-200"
+              >
+                Logout
+              </span>
+            </div>
+          </button>
         </div>
       </nav>
 

@@ -10,21 +10,25 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetCurrentUserQuery } from "@/redux/api/auth/authApi";
 import { setUser, logOut } from "@/redux/userSlice/userSlice";
+import { useRouter } from "next/navigation";
+import { logoutAction } from "@/app/actions/auth";
 
 interface IUserProviderValues {
   user: IUser | null;
   isLoading: boolean;
   setUser: (user: IUser | null) => void;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
+  logout: () => void;
 }
 
 const UserContext = createContext<IUserProviderValues | undefined>(undefined);
 
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const token = useSelector((state: RootState) => state.auth.token);
   const reduxUser = useSelector((state: RootState) => state.auth.user);
-  
+
   // Fetch current user if token exists
   const { data: userData, isLoading: isFetchingUser, error } = useGetCurrentUserQuery(
     undefined,
@@ -65,8 +69,18 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutAction()
+      dispatch(logOut())
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout failed", error)
+    }
+  }
+
   return (
-    <UserContext.Provider value={{ user, setUser: handleSetUser, isLoading, setIsLoading: () => {} }}>
+    <UserContext.Provider value={{ user, setUser: handleSetUser, isLoading, setIsLoading: () => { }, logout: handleLogout }}>
       {children}
     </UserContext.Provider>
   );
