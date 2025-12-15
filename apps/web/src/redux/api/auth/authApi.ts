@@ -35,6 +35,12 @@ export interface ResetPasswordRequest {
   confirmPassword: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface RefreshTokenRequest {
   refreshToken: string;
 }
@@ -100,6 +106,15 @@ const authApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Change Password
+    changePassword: builder.mutation<{ success: boolean; message: string }, ChangePasswordRequest>({
+      query: (passwordData) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body: passwordData,
+      }),
+    }),
+
     // Refresh Access Token
     refreshToken: builder.mutation<{ success: boolean; message: string; data: { token: string; refreshToken: string } }, RefreshTokenRequest>({
       query: ({ refreshToken }) => ({
@@ -126,6 +141,7 @@ export const {
   useGetCurrentUserQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useChangePasswordMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
 } = authApi;

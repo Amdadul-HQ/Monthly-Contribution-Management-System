@@ -24,11 +24,16 @@ import {
   AlertTriangle,
   Loader2,
   Save,
+  Key,
+  Lock,
 } from "lucide-react"
 import { useGetProfileQuery, useUpdateProfileMutation } from "@/redux/api/user-management/userApi"
+import { useChangePasswordMutation } from "@/redux/api/auth/authApi"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 export function ProfilePage() {
   const { data: response, isLoading, refetch } = useGetProfileQuery()
@@ -36,6 +41,7 @@ export function ProfilePage() {
 
   // Modal state
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -142,6 +148,15 @@ export function ProfilePage() {
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                onClick={() => setIsChangePasswordOpen(true)}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                Change Password
               </Button>
             </div>
           </div>
@@ -361,7 +376,154 @@ export function ProfilePage() {
         initialData={profileData.personalInfo}
         refetch={refetch}
       />
+
+      <ChangePasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </div>
+  )
+}
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain uppercase, lowercase, and number"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>
+
+function ChangePasswordDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [changePassword, { isLoading }] = useChangePasswordMutation()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+  })
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      reset()
+    }
+  }, [open, reset])
+
+  const onSubmit = async (data: ChangePasswordFormValues) => {
+    try {
+      const result = await changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword, // Use newPassword as per API/DTO
+        confirmPassword: data.confirmPassword, // Included as per interface
+      }).unwrap()
+
+      if (result.success) {
+        toast.success(result.message || "Password changed successfully")
+        onOpenChange(false)
+      } else {
+        toast.error(result.message || "Failed to change password")
+      }
+    } catch (error: any) {
+      console.error("Change password error:", error)
+      toast.error(error?.data?.message || error?.message || "Failed to change password")
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+          <DialogDescription>
+            Ensure your account is using a long, random password to stay secure.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="currentPassword">Current Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="currentPassword"
+                type="password"
+                className="pl-10"
+                placeholder="Enter current password"
+                {...register("currentPassword")}
+              />
+            </div>
+            {errors.currentPassword && (
+              <p className="text-sm text-red-500">{errors.currentPassword.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">New Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="newPassword"
+                type="password"
+                className="pl-10"
+                placeholder="Enter new password"
+                {...register("newPassword")}
+              />
+            </div>
+            {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="confirmPassword"
+                type="password"
+                className="pl-10"
+                placeholder="Confirm new password"
+                {...register("confirmPassword")}
+              />
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Update Password
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
