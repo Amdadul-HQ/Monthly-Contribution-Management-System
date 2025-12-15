@@ -2,7 +2,7 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,useSidebar } from "@workspace/ui/components/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@workspace/ui/components/sidebar"
 import { BarChart3, History, Plus, Settings, User, UserCog, UserPlus, Users, Wallet } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -18,7 +18,6 @@ const memberNavItems = [
     url: "/dashboard/member/profile",
     icon: User,
   },
-  ,
   {
     title: "Overview",
     url: "/dashboard/member",
@@ -53,20 +52,15 @@ const adminNavItems = [
     icon: Wallet,
   },
   {
-    title:"Deposits Request's",
-    url:"/dashboard/admin/deposit-request",
-    icon:Wallet
-  },
-  {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings,
+    title: "Deposits Request's",
+    url: "/dashboard/admin/deposit-request",
+    icon: Wallet
   },
 ]
 
 export function DashboardSidebar({ userType }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const navItems = userType === "admin" ? memberNavItems : adminNavItems
+  const navItems = userType === "admin" ? adminNavItems : memberNavItems
 
   return (
     <Sidebar variant="inset">
@@ -87,7 +81,7 @@ export function DashboardSidebar({ userType }: DashboardSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item:any) => (
+              {navItems.map((item: any) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>
