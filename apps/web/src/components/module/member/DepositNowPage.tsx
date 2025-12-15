@@ -277,7 +277,7 @@ export function DepositForm() {
   }
 
   return (
-    <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg max-w-2xl mx-auto">
+    <Card className="bg-white/70 backdrop-blur-sm border-white/30 shadow-lg max-w-2xl mx-auto w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-900">
           <CreditCard className="h-5 w-5 text-blue-600" />

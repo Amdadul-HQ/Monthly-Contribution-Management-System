@@ -317,7 +317,7 @@ function DepositDetailsDialog({ id, open, onOpenChange }: { id: string | null, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-xl">
+      <DialogContent className="max-w-2xl overflow-y-auto h-[calc(100vh-10rem)] bg-white/95 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <AppWindow className="h-5 w-5 text-blue-600" />
