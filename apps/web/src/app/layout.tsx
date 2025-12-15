@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "@workspace/ui/globals.css"
 import { Toaster } from "@workspace/ui/components/sonner";
-import "./font.css"; 
+import "./font.css";
 import Providers from "@/providers/Providers";
 
 
-export const metadata : Metadata = {
+export const metadata: Metadata = {
   title: "Monthly Contribution Management System",
   description: "Creative Web Developer",
 };
