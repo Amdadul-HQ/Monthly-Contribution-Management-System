@@ -173,6 +173,13 @@ export const adminApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: (result, error, { id }) => ["users", { type: "users", id }],
         }),
+        activateUser: build.mutation<UserActionResponseDto, string>({
+            query: (id) => ({
+                url: `/admin/users/${id}/activate`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["users"],
+        }),
     }),
 });
 
@@ -183,5 +190,6 @@ export const {
     useBlockUserMutation,
     useSuspendUserMutation,
     useRemoveUserMutation,
-    useUpdateUserMutation
+    useUpdateUserMutation,
+    useActivateUserMutation,
 } = adminApi;

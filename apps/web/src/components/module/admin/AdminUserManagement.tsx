@@ -45,6 +45,9 @@ import {
   Clock,
   Ban,
 } from "lucide-react"
+import { Textarea } from "@workspace/ui/components/textarea"
+import { Label } from "@workspace/ui/components/label"
+import { UserDetailModal } from "./UserDetailModal"
 import { useState, useEffect } from "react"
 import {
   useGetAllUsersQuery,
@@ -52,6 +55,7 @@ import {
   useSuspendUserMutation,
   useRemoveUserMutation,
   useUpdateUserMutation,
+  useActivateUserMutation,
   UserListItemDto
 } from "../../../redux/api/admin/adminApi"
 import { toast } from "sonner"
@@ -69,6 +73,9 @@ export function AdminUserManagement() {
   const [accountTypeFilter, setAccountTypeFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedAction, setSelectedAction] = useState<{ type: ActionType; user: UserListItemDto } | null>(null)
+  const [actionReason, setActionReason] = useState("")
+  const [detailUser, setDetailUser] = useState<string | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const itemsPerPage = 10
 
@@ -94,6 +101,7 @@ export function AdminUserManagement() {
   const [suspendUser] = useSuspendUserMutation()
   const [removeUser] = useRemoveUserMutation()
   const [updateUser] = useUpdateUserMutation()
+  const [activateUser] = useActivateUserMutation()
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -148,28 +156,41 @@ export function AdminUserManagement() {
 
   const handleUserAction = (type: ActionType, user: UserListItemDto) => {
     setSelectedAction({ type, user })
+    setActionReason("") // Reset reason
+  }
+
+  const handleViewDetails = (userId: string) => {
+    setDetailUser(userId)
+    setIsDetailOpen(true)
   }
 
   const confirmAction = async () => {
     if (!selectedAction) return
 
     const { type, user } = selectedAction
+
+    // Validate reason for block/suspend
+    if ((type === 'block' || type === 'suspend') && !actionReason.trim()) {
+      toast.error("Please provide a reason")
+      return
+    }
+
     const toastId = toast.loading("Processing...")
 
     try {
       let res;
       switch (type) {
         case "block":
-          res = await blockUser({ id: user.userId, data: { reason: "Admin Blocked" } }).unwrap()
+          res = await blockUser({ id: user.userId, data: { reason: actionReason } }).unwrap()
           break;
         case "suspend":
           // Default suspend for 30 days
           const endDate = new Date()
           endDate.setDate(endDate.getDate() + 30)
-          res = await suspendUser({ id: user.userId, data: { reason: "Admin Suspended", endDate: endDate.toISOString() } }).unwrap()
+          res = await suspendUser({ id: user.userId, data: { reason: actionReason, endDate: endDate.toISOString() } }).unwrap()
           break;
         case "activate":
-          res = await updateUser({ id: user.userId, data: { status: "Active" } }).unwrap()
+          res = await activateUser(user.userId).unwrap()
           break;
         case "remove":
           res = await removeUser(user.userId).unwrap()
@@ -178,13 +199,12 @@ export function AdminUserManagement() {
 
       if (res?.success) {
         toast.success(res.message, { id: toastId })
+        setSelectedAction(null) // Only close on success
       } else {
         toast.error("Action failed", { id: toastId })
       }
     } catch (error: any) {
       toast.error(error?.data?.message || "Something went wrong", { id: toastId })
-    } finally {
-      setSelectedAction(null)
     }
   }
 
@@ -408,7 +428,7 @@ export function AdminUserManagement() {
 
                       {/* Action Buttons */}
                       <div className="flex gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="flex-1 rounded-xl">
+                        <Button variant="outline" size="sm" className="flex-1 rounded-xl" onClick={() => handleViewDetails(user.userId)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Button>
@@ -423,24 +443,24 @@ export function AdminUserManagement() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {user.status === "Active" && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleUserAction("suspend", user)}>
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Suspend
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUserAction("block", user)}>
-                                  <ShieldX className="h-4 w-4 mr-2" />
-                                  Block
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {(user.status === "Suspended" || user.status === "Blocked" || user.status === "Inactive") && (
-                              <DropdownMenuItem onClick={() => handleUserAction("activate", user)}>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Activate
+                            {/* {user.status === "ACTIVE" && ( */}
+                            <>
+                              <DropdownMenuItem onClick={() => handleUserAction("suspend", user)}>
+                                <UserX className="h-4 w-4 mr-2" />
+                                Suspend
                               </DropdownMenuItem>
-                            )}
+                              <DropdownMenuItem onClick={() => handleUserAction("block", user)}>
+                                <ShieldX className="h-4 w-4 mr-2" />
+                                Block
+                              </DropdownMenuItem>
+                            </>
+                            {/* )} */}
+                            {/* {(user.status === "SUSPENDED" || user.status === "BLOCKED" || user.status === "INACTIVE") && ( */}
+                            <DropdownMenuItem onClick={() => handleUserAction("activate", user)}>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Activate
+                            </DropdownMenuItem>
+                            {/* )} */}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleUserAction("remove", user)} className="text-red-600">
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -528,7 +548,7 @@ export function AdminUserManagement() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewDetails(user.userId)}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
@@ -537,7 +557,7 @@ export function AdminUserManagement() {
                                   Edit User
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                {user.status === "Active" && (
+                                {user.status === "ACTIVE" && (
                                   <>
                                     <DropdownMenuItem onClick={() => handleUserAction("suspend", user)}>
                                       <UserX className="h-4 w-4 mr-2" />
@@ -549,9 +569,9 @@ export function AdminUserManagement() {
                                     </DropdownMenuItem>
                                   </>
                                 )}
-                                {(user.status === "Suspended" ||
-                                  user.status === "Blocked" ||
-                                  user.status === "Inactive") && (
+                                {(user.status === "SUSPENDED" ||
+                                  user.status === "BLOCKED" ||
+                                  user.status === "INACTIVE") && (
                                     <DropdownMenuItem onClick={() => handleUserAction("activate", user)}>
                                       <UserCheck className="h-4 w-4 mr-2" />
                                       Activate
@@ -638,6 +658,18 @@ export function AdminUserManagement() {
             <AlertDialogDescription>
               {selectedAction && getActionDescription(selectedAction.type, selectedAction.user)}
             </AlertDialogDescription>
+            {(selectedAction?.type === 'block' || selectedAction?.type === 'suspend') && (
+              <div className="py-4 space-y-2">
+                <Label htmlFor="reason">Reason (Required)</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="Enter the reason for this action..."
+                  value={actionReason}
+                  onChange={(e) => setActionReason(e.target.value)}
+                  className="bg-gray-50"
+                />
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -650,6 +682,13 @@ export function AdminUserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detail Modal */}
+      <UserDetailModal
+        userId={detailUser}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
     </div>
   )
 }
