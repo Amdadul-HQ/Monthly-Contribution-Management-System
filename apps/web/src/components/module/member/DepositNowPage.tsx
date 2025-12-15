@@ -195,10 +195,11 @@ export function DepositForm() {
     setSubmitStatus("idle")
 
     try {
-      if (!data.proofImage) {
-        toast.error("Please upload a payment proof image")
-        return
-      }
+      // Step 1: Remove manual proof image check
+      // if (!data.proofImage) {
+      //   toast.error("Please upload a payment proof image")
+      //   return
+      // }
 
       // Step 2: Map payment method to backend enum
       const paymentMethodMap: Record<PaymentMethod, string> = {
@@ -215,7 +216,7 @@ export function DepositForm() {
         depositAmount: Number.parseFloat(data.amount),
         paymentMethod: paymentMethodMap[data.paymentMethod as PaymentMethod],
         referencePerson: data.referencePerson,
-        proofImage: data.proofImage, // Use the uploaded URL directly
+        proofImage: data.proofImage || undefined, // Send undefined if empty
         notes: data.notes || undefined,
       }
 
@@ -670,13 +671,13 @@ export function DepositForm() {
 
           {/* Proof Image Upload with Overlay Preview */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700">Payment Proof *</Label>
+            <Label className="text-sm font-medium text-gray-700">Payment Proof (Optional)</Label>
 
             <div className="relative">
               {/* Hidden input for validation */}
               <input
                 type="hidden"
-                {...register("proofImage", { required: "Proof image is required" })}
+                {...register("proofImage")}
               />
 
               <div

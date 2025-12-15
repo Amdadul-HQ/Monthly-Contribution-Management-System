@@ -179,7 +179,7 @@ const LoginPage = () => {
           setTimeout(() => {
             try {
               reset();
-              router.push('/dashboard');
+              router.push('/dashboard/member/profile');
             } catch (navError) {
               handleError(navError, 'Navigation');
             }
@@ -335,8 +335,8 @@ const LoginPage = () => {
                       variant={loginType === "email" ? "default" : "ghost"}
                       size="sm"
                       className={`flex-1 rounded-full text-xs transition-all duration-300 ${loginType === "email"
-                          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
-                          : "text-gray-600 hover:bg-white/30"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-white/30"
                         }`}
                       onClick={() => setLoginType("email")}
                     >
@@ -348,8 +348,8 @@ const LoginPage = () => {
                       variant={loginType === "phone" ? "default" : "ghost"}
                       size="sm"
                       className={`flex-1 rounded-full text-xs transition-all duration-300 ${loginType === "phone"
-                          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
-                          : "text-gray-600 hover:bg-white/30"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-white/30"
                         }`}
                       onClick={() => setLoginType("phone")}
                     >
@@ -361,8 +361,8 @@ const LoginPage = () => {
                       variant={loginType === "memberid" ? "default" : "ghost"}
                       size="sm"
                       className={`flex-1 rounded-full text-xs transition-all duration-300 ${loginType === "memberid"
-                          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
-                          : "text-gray-600 hover:bg-white/30"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-white/30"
                         }`}
                       onClick={() => setLoginType("memberid")}
                     >
